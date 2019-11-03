@@ -123,27 +123,22 @@ fn parse_values<T>(line: &str, start_word: usize, count: usize) ->
     Ok(values)
 }
 
-fn parse_background(line: &str) -> Result<Color, NFFError> {
-    let colors = line.split_whitespace().collect::<Vec<_>>();
-    if colors.len() != 3 {
-        return Err(NFFError::new("b", "insufficient arguments"));
-    }
-
-    let r = match colors[0].parse() {
+fn parse_background(args: &[&str]) -> Result<Color, NFFError> {
+    let r = match args[0].parse() {
         Ok(value) => value,
         Err(e) => {
             return Err(NFFError::new("b", "invalid red value"));
         }
     };
 
-    let g = match colors[1].parse() {
+    let g = match args[1].parse() {
         Ok(value) => value,
         Err(e) => {
             return Err(NFFError::new("b", "invalid green value"));
         }
     };
 
-    let b = match colors[2].parse() {
+    let b = match args[2].parse() {
         Ok(value) => value,
         Err(e) => {
             return Err(NFFError::new("b", "invalid blue value"));
@@ -161,8 +156,8 @@ fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
     let mut hither: Option<f32> = None;
     let mut res: Option<(u32, u32)> = None;
 
-    let mut line = String::new();
     loop {
+        let mut line = String::new();
         let byte_count = stream.read_line(&mut line)?;
         if byte_count == 0 {
             // TO DO: Add detail about which parameter is missing
@@ -210,17 +205,17 @@ fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
     }
 }
 
-fn parse_polygon_patch(line: &str, stream: &mut std::io::Stdin) ->
+fn parse_polygon_patch(args: &[&str], stream: &mut std::io::Stdin) ->
         Result<Polygon, Box<dyn Error>> {
-    let vertex_count = parse_values(line, 1, 1)?[0];
+    let vertex_count = args[0].parse::<u32>()?;
     if vertex_count < 3 {
         return Err(Box::new(NFFError::new("pp", "insufficient vertex count")));
     }
 
     let mut vertices = Vec::<PointNormal>::new();
 
-    let mut line = String::new();
     for _ in 0..vertex_count {
+        let mut line = String::new();
         let byte_count = stream.read_line(&mut line)?;
         if byte_count == 0 {
             return Err(Box::new(NFFError::new("pp", "missing paramters")));
@@ -239,17 +234,17 @@ fn parse_polygon_patch(line: &str, stream: &mut std::io::Stdin) ->
     })
 }
 
-fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
+fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
         Result<Polygon, Box<dyn Error>> {
-    let vertex_count = parse_values(line, 1, 1)?[0];
+    let vertex_count = args[0].parse::<u32>()?;
     if vertex_count < 3 {
         return Err(Box::new(NFFError::new("p", "insufficient vertex count")));
     }
 
     let mut points = Vec::<Point>::new();
 
-    let mut line = String::new();
     for _ in 0..vertex_count {
+        let mut line = String::new();
         let byte_count = stream.read_line(&mut line)?;
         if byte_count == 0 {
             return Err(Box::new(NFFError::new("p", "missing parameters")));
@@ -284,8 +279,8 @@ fn read_nff() -> Result<(View, Scene), Box<dyn Error>> {
     let mut scene = Scene::new();
 
     let mut stream = io::stdin();
-    let mut line = String::new();
     loop {
+        let mut line = String::new();
         let byte_count = stream.read_line(&mut line)?;
         if byte_count == 0 {
             break;
@@ -294,19 +289,30 @@ fn read_nff() -> Result<(View, Scene), Box<dyn Error>> {
         if line.starts_with("#") {
             continue;
         }
-        else if line.starts_with("v") {
+
+        let tokens = line.split_whitespace().collect::<Vec<_>>();
+        if tokens.is_empty() {
+            continue;
+        }
+
+        let command = tokens[0];
+        let args = &tokens[1..];
+        if command == "v" && args.len() == 0 {
             view = Some(parse_view(&mut stream)?);
         }
-        else if line.starts_with("b") {
-            scene.background = parse_background(&line)?;
+        else if command == "b" && args.len() == 3 {
+            scene.background = parse_background(args)?;
         }
-        else if line.starts_with("pp") {
-            let poly = parse_polygon_patch(&line, &mut stream)?;
+        else if command == "pp" && args.len() == 1 {
+            let poly = parse_polygon_patch(args, &mut stream)?;
             scene.primitives.push(Box::new(poly));
         }
-        else if line.starts_with("p") {
-            let poly = parse_polygon(&line, &mut stream)?;
+        else if command == "p" && args.len() == 1 {
+            let poly = parse_polygon(args, &mut stream)?;
             scene.primitives.push(Box::new(poly));
+        }
+        else {
+            eprintln!("unrecognized command: {}", line);
         }
     }
 
