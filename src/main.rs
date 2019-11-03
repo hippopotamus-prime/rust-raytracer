@@ -2,143 +2,16 @@ use std::io;
 use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
-use std::ops;
+
+mod vector_math;
+use vector_math::Point;
+use vector_math::Vector;
 
 #[derive(Debug, Clone)]
 struct Color {
     r: f32,
     g: f32,
     b: f32
-}
-
-#[derive(Debug, Clone)]
-struct Point {
-    x: f32,
-    y: f32,
-    z: f32
-}
-
-#[derive(Debug, Clone)]
-struct Vector {
-    dx: f32,
-    dy: f32,
-    dz: f32
-}
-
-impl Vector {
-    fn magnitude(&self) -> f32 {
-        let m2 = self.dx * self.dx + self.dy * self.dy + self.dz * self.dz;
-        m2.sqrt()
-    }
-
-    fn normalize(&mut self) {
-        let mag = self.magnitude();
-        *self /= mag;
-    }
-}
-
-impl ops::Add<&Vector> for &Point {
-    type Output = Point;
-
-    fn add(self, rhs: &Vector) -> Point {
-        Point {
-            x: self.x + rhs.dx, 
-            y: self.y + rhs.dy,
-            z: self.z + rhs.dz
-        }
-    }
-}
-
-impl ops::AddAssign<&Vector> for Point {
-    fn add_assign(&mut self, other: &Vector) {
-        self.x += other.dx;
-        self.y += other.dy;
-        self.z += other.dz;
-    }
-}
-
-impl ops::Sub<&Point> for &Point {
-    type Output = Vector;
-
-    fn sub(self, rhs: &Point) -> Vector {
-        Vector {
-            dx: self.x - rhs.x,
-            dy: self.y - rhs.y,
-            dz: self.z - rhs.z
-        }
-    }
-}
-
-impl ops::SubAssign<&Vector> for Point {
-    fn sub_assign(&mut self, other: &Vector) {
-        self.x -= other.dx;
-        self.y -= other.dy;
-        self.z -= other.dz;
-    }
-}
-
-impl ops::Mul<f32> for &Vector {
-    type Output = Vector;
-
-    fn mul(self, scale: f32) -> Vector {
-        Vector {
-            dx: self.dx * scale,
-            dy: self.dy * scale,
-            dz: self.dz * scale
-        }
-    }
-}
-
-impl ops::MulAssign<f32> for Vector {
-    fn mul_assign(&mut self, scale: f32) {
-        self.dx *= scale;
-        self.dy *= scale;
-        self.dz *= scale;
-    }
-}
-
-impl ops::Div<f32> for &Vector {
-    type Output = Vector;
-
-    fn div(self, scale: f32) -> Vector {
-        Vector {
-            dx: self.dx / scale,
-            dy: self.dy / scale, 
-            dz: self.dz / scale
-        }
-    }
-}
-
-impl ops::DivAssign<f32> for Vector {
-    fn div_assign(&mut self, scale: f32) {
-        self.dx /= scale;
-        self.dy /= scale;
-        self.dz /= scale;
-    }
-}
-
-impl ops::Neg for &Vector {
-    type Output = Vector;
-
-    fn neg(self) -> Vector {
-        Vector {
-            dx: -self.dx,
-            dy: -self.dy,
-            dz: -self.dz
-        }
-    }
-}
-
-fn cross(v1: &Vector, v2: &Vector) -> Vector {
-    Vector {
-        dx: v1.dy * v2.dz - v1.dz * v2.dy,
-        dy: v1.dz * v2.dx - v1.dx * v2.dz,
-        dz: v1.dx * v2.dy - v1.dy * v2.dx
-    }
-}
-
-fn dot(v1: &Vector, v2: &Vector) -> f32 {
-    v1.dx * v2.dx + v1.dy * v2.dy + v1.dz * v2.dz
 }
 
 struct View {
@@ -391,7 +264,7 @@ fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
     // points are defined counter-clockwise (right handed).
     let v1 = &points[1] - &points[0];
     let v2 = &points[2] - &points[0];
-    let normal = cross(&v1, &v2);
+    let normal = vector_math::cross(&v1, &v2);
 
     let mut vertices = Vec::<PointNormal>::new();
     for point in points {
