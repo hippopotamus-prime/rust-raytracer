@@ -2,7 +2,9 @@ use std::io;
 use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
+use std::ops;
 
+#[derive(Debug, Clone)]
 struct Color {
     r: f32,
     g: f32,
@@ -23,6 +25,90 @@ struct Vector {
     dz: f32
 }
 
+impl ops::Add<&Vector> for &Point {
+    type Output = Point;
+
+    fn add(self, rhs: &Vector) -> Point {
+        Point {
+            x: self.x + rhs.dx, 
+            y: self.y + rhs.dy,
+            z: self.z + rhs.dz
+        }
+    }
+}
+
+impl ops::AddAssign<&Vector> for Point {
+    fn add_assign(&mut self, other: &Vector) {
+        self.x += other.dx;
+        self.y += other.dy;
+        self.z += other.dz;
+    }
+}
+
+impl ops::Sub<&Point> for &Point {
+    type Output = Vector;
+
+    fn sub(self, rhs: &Point) -> Vector {
+        Vector {
+            dx: self.x - rhs.x,
+            dy: self.y - rhs.y,
+            dz: self.z - rhs.z
+        }
+    }
+}
+
+impl ops::SubAssign<&Vector> for Point {
+    fn sub_assign(&mut self, other: &Vector) {
+        self.x -= other.dx;
+        self.y -= other.dy;
+        self.z -= other.dz;
+    }
+}
+
+impl ops::Mul<f32> for &Vector {
+    type Output = Vector;
+
+    fn mul(self, scale: f32) -> Vector {
+        Vector {
+            dx: self.dx * scale,
+            dy: self.dy * scale,
+            dz: self.dz * scale
+        }
+    }
+}
+
+impl ops::MulAssign<f32> for Vector {
+    fn mul_assign(&mut self, scale: f32) {
+        self.dx *= scale;
+        self.dy *= scale;
+        self.dz *= scale;
+    }
+}
+
+impl ops::Neg for &Vector {
+    type Output = Vector;
+
+    fn neg(self) -> Vector {
+        Vector {
+            dx: -self.dx,
+            dy: -self.dy,
+            dz: -self.dz
+        }
+    }
+}
+
+fn cross(v1: &Vector, v2: &Vector) -> Vector {
+    Vector {
+        dx: v1.dy * v2.dz - v1.dz * v2.dy,
+        dy: v1.dz * v2.dx - v1.dx * v2.dz,
+        dz: v1.dx * v2.dy - v1.dy * v2.dx
+    }
+}
+
+fn dot(v1: &Vector, v2: &Vector) -> f32 {
+    v1.dx * v2.dx + v1.dy * v2.dy + v1.dz * v2.dz
+}
+
 struct View {
     from: Point,
     up: Vector,
@@ -33,8 +119,14 @@ struct View {
     height: u32
 }
 
+struct IntersectResult {
+    normal: Vector,
+    dist: f32
+}
+
 trait Intersect {
-    fn intersect(&self, ray: &Vector) -> Option<Point>;
+    fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
+            Option<IntersectResult>;
 }
 
 struct Scene {
@@ -48,6 +140,22 @@ impl Scene {
             background: Color {r: 1.0, g: 1.0, b: 1.0},
             primitives: vec! {}
         }
+    }
+}
+
+struct PointNormal {
+    point: Point,
+    normal: Vector
+}
+
+struct Polygon {
+    vertices: Vec<PointNormal>
+}
+
+impl Intersect for Polygon {
+    fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
+            Option<IntersectResult> {
+        None
     }
 }
 
@@ -197,6 +305,43 @@ fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
     }
 }
 
+fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
+        Result<Polygon, Box<dyn Error>> {
+    let vertex_count = parse_values(line, 1, 1)?[0];
+    if vertex_count < 3 {
+        return Err(Box::new(NFFError::new("p", "insufficient vertex count")));
+    }
+
+    let mut vertices = Vec::<PointNormal>::new();
+
+    let mut line = String::new();
+    for _ in 0..vertex_count {
+        let byte_count = stream.read_line(&mut line)?;
+        if byte_count == 0 {
+            return Err(Box::new(NFFError::new("p", "missing parameters")));
+        }
+
+        let values = parse_values(&line, 0, 3)?;
+        let point = Point {x: values[0], y: values[1], z: values[2]};
+        let normal = Vector {dx: 0.0, dy: 0.0, dz: 0.0};
+        vertices.push(PointNormal {point: point, normal: normal});
+    }
+
+    // Calculate one normal vector for the whole polygon, assuming the
+    // points are defined counter-clockwise (right handed).
+    let v1 = &vertices[1].point - &vertices[0].point;
+    let v2 = &vertices[2].point - &vertices[0].point;
+    let normal = cross(&v1, &v2);
+
+    for vertex in &mut vertices {
+        vertex.normal = normal.clone();
+    }
+
+    Ok(Polygon {
+        vertices: vertices
+    })
+}
+
 fn read_nff() -> Result<(View, Scene), Box<dyn Error>> {
     let mut view: Option<View> = None;
     let mut scene = Scene::new();
@@ -217,6 +362,10 @@ fn read_nff() -> Result<(View, Scene), Box<dyn Error>> {
         }
         else if line.starts_with("b") {
             scene.background = parse_background(&line)?;
+        }
+        else if line.starts_with("p") {
+            let poly = parse_polygon(&line, &mut stream)?;
+            scene.primitives.push(Box::new(poly));
         }
     }
 
