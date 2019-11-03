@@ -6,6 +6,13 @@ use std::str::FromStr;
 mod vector_math;
 use vector_math::Point;
 use vector_math::Vector;
+use vector_math::PointNormal;
+
+mod intersect;
+use intersect::Intersect;
+
+mod polygon;
+use polygon::Polygon;
 
 #[derive(Debug, Clone)]
 struct Color {
@@ -24,16 +31,6 @@ struct View {
     height: u32
 }
 
-struct IntersectResult {
-    normal: Vector,
-    dist: f32
-}
-
-trait Intersect {
-    fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
-            Option<IntersectResult>;
-}
-
 struct Scene {
     background: Color,
     primitives: Vec<Box<dyn Intersect>>
@@ -45,22 +42,6 @@ impl Scene {
             background: Color {r: 1.0, g: 1.0, b: 1.0},
             primitives: vec! {}
         }
-    }
-}
-
-struct PointNormal {
-    point: Point,
-    normal: Vector
-}
-
-struct Polygon {
-    vertices: Vec<PointNormal>
-}
-
-impl Intersect for Polygon {
-    fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
-            Option<IntersectResult> {
-        None
     }
 }
 

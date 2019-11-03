@@ -26,6 +26,12 @@ impl Vector {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct PointNormal {
+    pub point: Point,
+    pub normal: Vector
+}
+
 impl ops::Add<&Vector> for Point {
     type Output = Point;
 
