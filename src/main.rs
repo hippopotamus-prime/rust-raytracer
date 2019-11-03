@@ -25,6 +25,18 @@ struct Vector {
     dz: f32
 }
 
+impl Vector {
+    fn magnitude(&self) -> f32 {
+        let m2 = self.dx * self.dx + self.dy * self.dy + self.dz * self.dz;
+        m2.sqrt()
+    }
+
+    fn normalize(&mut self) {
+        let mag = self.magnitude();
+        *self /= mag;
+    }
+}
+
 impl ops::Add<&Vector> for &Point {
     type Output = Point;
 
@@ -82,6 +94,26 @@ impl ops::MulAssign<f32> for Vector {
         self.dx *= scale;
         self.dy *= scale;
         self.dz *= scale;
+    }
+}
+
+impl ops::Div<f32> for &Vector {
+    type Output = Vector;
+
+    fn div(self, scale: f32) -> Vector {
+        Vector {
+            dx: self.dx / scale,
+            dy: self.dy / scale, 
+            dz: self.dz / scale
+        }
+    }
+}
+
+impl ops::DivAssign<f32> for Vector {
+    fn div_assign(&mut self, scale: f32) {
+        self.dx /= scale;
+        self.dy /= scale;
+        self.dz /= scale;
     }
 }
 
@@ -305,6 +337,35 @@ fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
     }
 }
 
+fn parse_polygon_patch(line: &str, stream: &mut std::io::Stdin) ->
+        Result<Polygon, Box<dyn Error>> {
+    let vertex_count = parse_values(line, 1, 1)?[0];
+    if vertex_count < 3 {
+        return Err(Box::new(NFFError::new("pp", "insufficient vertex count")));
+    }
+
+    let mut vertices = Vec::<PointNormal>::new();
+
+    let mut line = String::new();
+    for _ in 0..vertex_count {
+        let byte_count = stream.read_line(&mut line)?;
+        if byte_count == 0 {
+            return Err(Box::new(NFFError::new("pp", "missing paramters")));
+        }
+
+        let values = parse_values(&line, 0, 6)?;
+        let point = Point {x: values[0], y: values[1], z: values[2]};
+        let mut normal = Vector {dx: values[3], dy: values[2], dz: values[3]};
+        normal.normalize();
+
+        vertices.push(PointNormal {point: point, normal: normal});
+    }
+
+    Ok(Polygon {
+        vertices: vertices
+    })
+}
+
 fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
         Result<Polygon, Box<dyn Error>> {
     let vertex_count = parse_values(line, 1, 1)?[0];
@@ -312,7 +373,7 @@ fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
         return Err(Box::new(NFFError::new("p", "insufficient vertex count")));
     }
 
-    let mut vertices = Vec::<PointNormal>::new();
+    let mut points = Vec::<Point>::new();
 
     let mut line = String::new();
     for _ in 0..vertex_count {
@@ -323,18 +384,21 @@ fn parse_polygon(line: &str, stream: &mut std::io::Stdin) ->
 
         let values = parse_values(&line, 0, 3)?;
         let point = Point {x: values[0], y: values[1], z: values[2]};
-        let normal = Vector {dx: 0.0, dy: 0.0, dz: 0.0};
-        vertices.push(PointNormal {point: point, normal: normal});
+        points.push(point);
     }
 
     // Calculate one normal vector for the whole polygon, assuming the
     // points are defined counter-clockwise (right handed).
-    let v1 = &vertices[1].point - &vertices[0].point;
-    let v2 = &vertices[2].point - &vertices[0].point;
+    let v1 = &points[1] - &points[0];
+    let v2 = &points[2] - &points[0];
     let normal = cross(&v1, &v2);
 
-    for vertex in &mut vertices {
-        vertex.normal = normal.clone();
+    let mut vertices = Vec::<PointNormal>::new();
+    for point in points {
+        vertices.push(PointNormal {
+            point: point,
+            normal: normal.clone()
+        })
     }
 
     Ok(Polygon {
@@ -362,6 +426,10 @@ fn read_nff() -> Result<(View, Scene), Box<dyn Error>> {
         }
         else if line.starts_with("b") {
             scene.background = parse_background(&line)?;
+        }
+        else if line.starts_with("pp") {
+            let poly = parse_polygon_patch(&line, &mut stream)?;
+            scene.primitives.push(Box::new(poly));
         }
         else if line.starts_with("p") {
             let poly = parse_polygon(&line, &mut stream)?;
