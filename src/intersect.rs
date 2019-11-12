@@ -2,8 +2,8 @@ use crate::vector_math::Point;
 use crate::vector_math::Vector;
 
 pub struct IntersectResult {
-    normal: Vector,
-    dist: f32
+    pub normal: Vector,
+    pub dist: f32
 }
 
 pub trait Intersect {

@@ -44,12 +44,36 @@ impl ops::Add<&Vector> for Point {
     }
 }
 
+impl ops::Add<Vector> for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Vector) -> Point {
+        Point {
+            x: self.x + rhs.dx,
+            y: self.y + rhs.dy,
+            z: self.z + rhs.dz
+        }
+    }
+}
+
 impl ops::Add<&Vector> for &Point {
     type Output = Point;
 
     fn add(self, rhs: &Vector) -> Point {
         Point {
             x: self.x + rhs.dx, 
+            y: self.y + rhs.dy,
+            z: self.z + rhs.dz
+        }
+    }
+}
+
+impl ops::Add<Vector> for &Point {
+    type Output = Point;
+
+    fn add(self, rhs: Vector) -> Point {
+        Point {
+            x: self.x + rhs.dx,
             y: self.y + rhs.dy,
             z: self.z + rhs.dz
         }
@@ -76,10 +100,34 @@ impl ops::Sub<&Point> for Point {
     }
 }
 
+impl ops::Sub<Point> for Point {
+    type Output = Vector;
+
+    fn sub(self, rhs: Point) -> Vector {
+        Vector {
+            dx: self.x - rhs.x,
+            dy: self.y - rhs.y,
+            dz: self.z - rhs.z
+        }
+    }
+}
+
 impl ops::Sub<&Point> for &Point {
     type Output = Vector;
 
     fn sub(self, rhs: &Point) -> Vector {
+        Vector {
+            dx: self.x - rhs.x,
+            dy: self.y - rhs.y,
+            dz: self.z - rhs.z
+        }
+    }
+}
+
+impl ops::Sub<Point> for &Point {
+    type Output = Vector;
+
+    fn sub(self, rhs: Point) -> Vector {
         Vector {
             dx: self.x - rhs.x,
             dy: self.y - rhs.y,
@@ -194,4 +242,14 @@ pub fn cross(v1: &Vector, v2: &Vector) -> Vector {
 
 pub fn dot(v1: &Vector, v2: &Vector) -> f32 {
     v1.dx * v2.dx + v1.dy * v2.dy + v1.dz * v2.dz
+}
+
+pub fn interpolate(v1: &Vector, v2: &Vector, scale: f32) -> Vector {
+    let mut result = Vector {
+        dx: v1.dx * scale + v2.dx * (1.0 - scale),
+        dy: v1.dy * scale + v2.dy * (1.0 - scale),
+        dz: v1.dz * scale + v2.dy * (1.0 - scale)
+    };
+    result.normalize();
+    result
 }

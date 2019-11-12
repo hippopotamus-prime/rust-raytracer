@@ -202,7 +202,8 @@ fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
     // points are defined counter-clockwise (right handed).
     let v1 = &points[1] - &points[0];
     let v2 = &points[2] - &points[0];
-    let normal = vector_math::cross(&v1, &v2);
+    let mut normal = vector_math::cross(&v1, &v2);
+    normal.normalize();
 
     let mut vertices = Vec::<PointNormal>::new();
     for point in points {
