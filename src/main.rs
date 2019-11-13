@@ -10,8 +10,8 @@ mod render;
 fn main() -> Result<(), Box<dyn Error>> {
     let (view, scene) = nff::read()?;
 
-    // TO DO: Create an array to hold the output pixels
-    let mut target = render::RenderTarget {};
+    let mut target = render::RenderTarget::new(
+        view.width as usize, view.height as usize);
 
     render::render(&view, &scene, &mut target);
 

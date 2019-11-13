@@ -93,7 +93,7 @@ fn parse_background(args: &[&str]) -> Result<Color, NFFError> {
 
 fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
     let mut from: Option<Point> = None;
-    let mut at: Option<Vector> = None;
+    let mut at: Option<Point> = None;
     let mut up: Option<Vector> = None;
     let mut angle: Option<f32> = None;
     let mut hither: Option<f32> = None;
@@ -113,7 +113,7 @@ fn parse_view(stream: &mut std::io::Stdin) -> Result<View, Box<dyn Error>> {
         }
         else if line.starts_with("at") {
             let values = parse_values(&line, 1, 3)?;
-            at = Some(Vector {dx: values[0], dy: values[1], dz: values[2]});
+            at = Some(Point {x: values[0], y: values[1], z: values[2]});
         }
         else if line.starts_with("up") {
             let values = parse_values(&line, 1, 3)?;

@@ -24,6 +24,11 @@ impl Vector {
         let mag = self.magnitude();
         *self /= mag;
     }
+
+    pub fn normalized(&self) -> Vector {
+        let mag = self.magnitude();
+        self / mag
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -228,6 +233,54 @@ impl ops::Neg for &Vector {
             dx: -self.dx,
             dy: -self.dy,
             dz: -self.dz
+        }
+    }
+}
+
+impl ops::Add<Vector> for Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: Vector) -> Vector {
+        Vector {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+            dz: self.dz + rhs.dz
+        }
+    }
+}
+
+impl ops::Add<&Vector> for Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: &Vector) -> Vector {
+        Vector {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+            dz: self.dz + rhs.dz
+        }
+    }
+}
+
+impl ops::Add<Vector> for &Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: Vector) -> Vector {
+        Vector {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+            dz: self.dz + rhs.dz
+        }
+    }
+}
+
+impl ops::Add<&Vector> for &Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: &Vector) -> Vector {
+        Vector {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+            dz: self.dz + rhs.dz
         }
     }
 }
