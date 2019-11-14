@@ -5,6 +5,7 @@ mod intersect;
 mod polygon;
 mod nff;
 mod render;
+mod ppm;
 
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -15,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     render::render(&view, &scene, &mut target);
 
-    // TO DO: Write the output file
+    ppm::write(&target, "trace.ppm")?;
 
     Ok(())
 }

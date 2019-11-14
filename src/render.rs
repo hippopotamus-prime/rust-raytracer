@@ -54,8 +54,8 @@ impl Intersect for Scene {
 }
 
 pub struct RenderTarget {
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
     values: Vec<Color>
 }
 
@@ -68,6 +68,10 @@ impl RenderTarget {
 
     pub fn set(&mut self, x: usize, y: usize, color: Color) {
         self.values[y * self.height + x] = color;
+    }
+
+    pub fn get(&self, x: usize, y: usize) -> &Color {
+        &self.values[y * self.height + x]
     }
 }
 
@@ -94,11 +98,15 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
     let up = vector_math::cross(&right, &forward).normalized() * up_len;
 
     for j in 0..target.height {
+        println!("Rendering line {}", j + 1);
+
         // Convert to screen coordinates in the range [-1.0, 1.0]
-        let sy = 1.0 - ((2 * j - 1) as f32) / (target.height as f32);
+        let sy = 1.0 - ((2 * (j as isize) - 1) as f32) /
+            (target.height as f32);
 
         for i in 0..target.width {
-            let sx = 1.0 - ((2 * i - 1) as f32) / (target.width as f32);
+            let sx = 1.0 - ((2 * (i as isize) - 1) as f32) /
+                (target.width as f32);
 
             let ray = (&forward + &up * sy + &right * sx).normalized();
             let color = trace(&view.from, &ray, &scene, view.hither);
