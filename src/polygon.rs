@@ -19,7 +19,7 @@ impl Intersect for Polygon {
         let geometric_normal = vector_math::cross(&edge1, &edge2);
 
         let den = vector_math::dot(&ray, &geometric_normal);
-        if den < 0.000001 {
+        if den.abs() < 0.000001 {
             // This means the ray is (very nearly) parallel to the plane of
             // the polygon - no intersection possible.
             return None;
@@ -73,7 +73,7 @@ impl Intersect for Polygon {
                     &self.vertices[(i + 1) % self.vertices.len()].point;
                 let edge = point - next_point;
 
-                if edge.dy < 0.000001 {
+                if edge.dy.abs() < 0.000001 {
                     // The edge is (very nearly) parallel to our trace - no
                     // intersection possible.
                     continue;
@@ -128,7 +128,7 @@ impl Intersect for Polygon {
                     &self.vertices[(i + 1) % self.vertices.len()].point;
                 let edge = point - next_point;
 
-                if edge.dz < 0.000001 {
+                if edge.dz.abs() < 0.000001 {
                     continue;
                 }
 
@@ -174,7 +174,7 @@ impl Intersect for Polygon {
                     &self.vertices[(i + 1) % self.vertices.len()].point;
                 let edge = point - next_point;
 
-                if edge.dz < 0.000001 {
+                if edge.dz.abs() < 0.000001 {
                     continue;
                 }
 
@@ -229,7 +229,7 @@ impl Intersect for Polygon {
                     fna, fnb, nearest_forward_scale);
 
                 let rna = &self.vertices[nearest_reverse_index].normal;
-                let rnb = &self.vertices[(nearest_reverse_index + 1) &
+                let rnb = &self.vertices[(nearest_reverse_index + 1) %
                         self.vertices.len()].normal;
                 let reverse_normal = vector_math::interpolate(
                     rna, rnb, nearest_reverse_scale);
