@@ -9,6 +9,7 @@ use crate::vector_math::Point;
 use crate::vector_math::PointNormal;
 use crate::vector_math;
 use crate::polygon::Polygon;
+use crate::sphere::Sphere;
 use crate::render::Color;
 use crate::render::View;
 use crate::phong::Phong;
@@ -269,6 +270,19 @@ fn parse_colored_light(args: &[&str]) -> Result<Light, Box<dyn Error>> {
     })
 }
 
+fn parse_sphere(args: &[&str]) -> Result<Sphere, Box<dyn Error>> {
+    let x = args[0].parse()?;
+    let y = args[1].parse()?;
+    let z = args[2].parse()?;
+
+    let radius = args[3].parse()?;
+
+    Ok(Sphere {
+        center: Point {x, y, z},
+        radius: radius
+    })
+}
+
 pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
     let mut view: Option<View> = None;
     let mut scene = Scene::new();
@@ -321,6 +335,9 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
         } else if command == "l" && args.len() == 6 {
             let light = parse_colored_light(args)?;
             scene.add_light(light);
+        } else if command == "s" && args.len() == 4 {
+            let sphere = parse_sphere(args)?;
+            scene.add_primitive(Box::new(sphere), surface.clone());
         } else {
             eprintln!("unrecognized command: {}", line);
         }

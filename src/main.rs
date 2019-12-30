@@ -3,6 +3,7 @@ use std::error::Error;
 mod vector_math;
 mod intersect;
 mod polygon;
+mod sphere;
 mod nff;
 mod render;
 mod ppm;

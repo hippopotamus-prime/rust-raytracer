@@ -3,15 +3,15 @@ Ray tracer in Rust, adapted from [an old C++ project](https://github.com/hippopo
 
 ## Planned Features
 * [ ] Various geometry primitives
-  * [ ] Spheres
+  * [x] Spheres
   * [ ] Cones
   * [ ] Cylinders
   * [x] 2D Polygons
 * [ ] Various shading models
-  * [ ] Phong
+  * [x] Phong
   * [ ] Blinn-Phong
 * [ ] Reflection & refraction
-* [ ] Point light sources with shadowing
+* [x] Point light sources with shadowing
 * [ ] Accelerated rendering with K-D trees
 * [x] Input in [NFF format](http://paulbourke.net/dataformats/nff/nff1.html)
 * [x] Output in [PPM format](http://netpbm.sourceforge.net/doc/ppm.html)
