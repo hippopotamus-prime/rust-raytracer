@@ -156,8 +156,7 @@ fn trace(src: &Point, ray: &Vector, scene: &Scene, near: f32) -> Color {
             total_color.g += color.g;
             total_color.b += color.b;
         }
-        //return total_color;
-        return Color {r: 1.0, g: 1.0, b: 1.0};
+        return total_color;
     }
 
     scene.background.clone()

@@ -373,7 +373,7 @@ pub fn interpolate(v1: &Vector, v2: &Vector, scale: f32) -> Vector {
     let mut result = Vector {
         dx: v1.dx * scale + v2.dx * (1.0 - scale),
         dy: v1.dy * scale + v2.dy * (1.0 - scale),
-        dz: v1.dz * scale + v2.dy * (1.0 - scale)
+        dz: v1.dz * scale + v2.dz * (1.0 - scale)
     };
     result.normalize();
     result
