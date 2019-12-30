@@ -12,6 +12,20 @@ pub struct Color {
     pub b: f32
 }
 
+impl Color {
+    pub fn clamp(&mut self) {
+        if self.r > 1.0 {
+            self.r = 1.0;
+        }
+        if self.g > 1.0 {
+            self.g = 1.0;
+        }
+        if self.b > 1.0 {
+            self.b = 1.0;
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Light {
     pub position: Point,
@@ -160,11 +174,11 @@ fn trace(src: &Point, ray: &Vector, scene: &Scene, near: f32) -> Color {
             let color = surface.get_visible_color(
                 &intersect_result.normal, ray, &surface_to_light, &light.color);
 
-            // TO DO:  Should this be clamped?  Scaled?
             total_color.r += color.r;
             total_color.g += color.g;
             total_color.b += color.b;
         }
+        total_color.clamp();
         return total_color;
     }
 
