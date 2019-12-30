@@ -170,7 +170,7 @@ fn parse_polygon_patch(args: &[&str], stream: &mut std::io::Stdin) ->
 
         let values = parse_values(&line, 0, 6)?;
         let point = Point {x: values[0], y: values[1], z: values[2]};
-        let mut normal = Vector {dx: values[3], dy: values[2], dz: values[3]};
+        let mut normal = Vector {dx: values[3], dy: values[4], dz: values[5]};
         normal.normalize();
 
         vertices.push(PointNormal {point: point, normal: normal});
