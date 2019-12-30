@@ -128,7 +128,7 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
             (target.height as f32);
 
         for i in 0..target.width {
-            let sx = 1.0 - ((2 * (i as isize) + 1) as f32) /
+            let sx = -1.0 + ((2 * (i as isize) + 1) as f32) /
                 (target.width as f32);
 
             let ray = (&forward + &up * sy + &right * sx).normalized();
