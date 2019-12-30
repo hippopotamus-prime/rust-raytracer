@@ -28,11 +28,17 @@ impl Surface for Phong {
 
         let reflected_view = view - 2.0 * ndv * normal;
 
+        let mut specular_contrib = 0.0;
         let ldr = vector_math::dot(&reflected_view, light_direction);
-        let specular_contrib = self.specular_component * ldr.powf(self.shine);
+        if ldr > 0.0 {
+            specular_contrib = self.specular_component * ldr.powf(self.shine);
+        }
 
+        let mut diffuse_contrib = 0.0;
         let ndl = vector_math::dot(normal, light_direction);
-        let diffuse_contrib = self.diffuse_component * ndl;
+        if ndl > 0.0 {
+            diffuse_contrib = self.diffuse_component * ndl;
+        }
 
         Color {
             r: light_color.r *
