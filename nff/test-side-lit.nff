@@ -1,0 +1,16 @@
+# For testing - a white triangle on a black background, viewed and lit at a
+# 45-degree angle.
+b 0 0 0
+v
+from 0 0 0
+at 1 0 0
+up 0 1 0
+angle 45
+hither 0.1
+resolution 512 512
+l 2 0 2
+f 1 1 1 0.5 0.5 1 0 0
+p 3
+2.354 -0.289 0.354
+2 0.577 0
+1.646 -0.289 -0.354
