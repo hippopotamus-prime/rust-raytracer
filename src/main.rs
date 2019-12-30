@@ -6,6 +6,7 @@ mod polygon;
 mod nff;
 mod render;
 mod ppm;
+mod phong;
 
 
 fn main() -> Result<(), Box<dyn Error>> {

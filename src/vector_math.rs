@@ -173,6 +173,30 @@ impl ops::Mul<f32> for &Vector {
     }
 }
 
+impl ops::Mul<&Vector> for f32 {
+    type Output = Vector;
+
+    fn mul(self, vector: &Vector) -> Vector {
+        Vector {
+            dx: vector.dx * self,
+            dy: vector.dy * self,
+            dz: vector.dz * self
+        }
+    }
+}
+
+impl ops::Mul<Vector> for f32 {
+    type Output = Vector;
+
+    fn mul(self, vector: Vector) -> Vector {
+        Vector {
+            dx: vector.dx * self,
+            dy: vector.dy * self,
+            dz: vector.dz * self
+        }
+    }
+}
+
 impl ops::MulAssign<f32> for Vector {
     fn mul_assign(&mut self, scale: f32) {
         self.dx *= scale;
@@ -281,6 +305,54 @@ impl ops::Add<&Vector> for &Vector {
             dx: self.dx + rhs.dx,
             dy: self.dy + rhs.dy,
             dz: self.dz + rhs.dz
+        }
+    }
+}
+
+impl ops::Sub<Vector> for Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: Vector) -> Vector {
+        Vector {
+            dx: self.dx - rhs.dx,
+            dy: self.dy - rhs.dy,
+            dz: self.dz - rhs.dz
+        }
+    }
+}
+
+impl ops::Sub<&Vector> for Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: &Vector) -> Vector {
+        Vector {
+            dx: self.dx - rhs.dx,
+            dy: self.dy - rhs.dy,
+            dz: self.dz - rhs.dz
+        }
+    }
+}
+
+impl ops::Sub<Vector> for &Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: Vector) -> Vector {
+        Vector {
+            dx: self.dx - rhs.dx,
+            dy: self.dy - rhs.dy,
+            dz: self.dz - rhs.dz
+        }
+    }
+}
+
+impl ops::Sub<&Vector> for &Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: &Vector) -> Vector {
+        Vector {
+            dx: self.dx - rhs.dx,
+            dy: self.dy - rhs.dy,
+            dz: self.dz - rhs.dz
         }
     }
 }

@@ -2,6 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::io;
 use std::error::Error;
+use std::rc::Rc;
 
 use crate::vector_math::Vector;
 use crate::vector_math::Point;
@@ -11,6 +12,9 @@ use crate::polygon::Polygon;
 use crate::render::Color;
 use crate::render::Scene;
 use crate::render::View;
+use crate::phong::Phong;
+use crate::render::Light;
+
 
 #[derive(Debug, Clone)]
 struct NFFError {
@@ -218,9 +222,66 @@ fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
     })
 }
 
+fn parse_phong(args: &[&str]) -> Result<Phong, Box<dyn Error>> {
+    let r = args[0].parse()?;
+    let g = args[1].parse()?;
+    let b = args[2].parse()?;
+    let kd = args[3].parse()?;
+    let ks = args[4].parse()?;
+    let shine = args[5].parse()?;
+    let transmittance = args[6].parse()?;
+    let refraction_index = args[7].parse()?;
+
+    Ok(Phong {
+        color: Color {r, g, b},
+        diffuse_component: kd,
+        specular_component: ks,
+        shine: shine,
+        reflectance: ks,
+        transmittance: transmittance,
+        refraction_index: refraction_index
+    })
+}
+
+fn parse_white_light(args: &[&str]) -> Result<Light, Box<dyn Error>> {
+    let x = args[0].parse()?;
+    let y = args[1].parse()?;
+    let z = args[2].parse()?;
+
+    Ok(Light {
+        position: Point {x, y, z},
+        color: Color {r: 1.0, g: 1.0, b: 1.0}
+    })
+}
+
+fn parse_colored_light(args: &[&str]) -> Result<Light, Box<dyn Error>> {
+    let x = args[0].parse()?;
+    let y = args[1].parse()?;
+    let z = args[2].parse()?;
+
+    let r = args[3].parse()?;
+    let g = args[4].parse()?;
+    let b = args[5].parse()?;
+
+    Ok(Light {
+        position: Point {x, y, z},
+        color: Color {r, g, b}
+    })
+}
+
 pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
     let mut view: Option<View> = None;
     let mut scene = Scene::new();
+
+    let mut surface = Rc::new(Phong {
+        color: Color {r: 1.0, g: 1.0, b: 1.0},
+        diffuse_component: 1.0,
+        specular_component: 0.0,
+        shine: 1.0,
+        reflectance: 0.0,
+        transmittance: 0.0,
+        refraction_index: 1.0
+    });
 
     let mut stream = io::stdin();
     loop {
@@ -243,19 +304,24 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
         let args = &tokens[1..];
         if command == "v" && args.len() == 0 {
             view = Some(parse_view(&mut stream)?);
-        }
-        else if command == "b" && args.len() == 3 {
+        } else if command == "b" && args.len() == 3 {
             scene.background = parse_background(args)?;
-        }
-        else if command == "pp" && args.len() == 1 {
+        } else if command == "pp" && args.len() == 1 {
             let poly = parse_polygon_patch(args, &mut stream)?;
-            scene.primitives.push(Box::new(poly));
-        }
-        else if command == "p" && args.len() == 1 {
+            scene.add_primitive(Box::new(poly), surface.clone());
+        } else if command == "p" && args.len() == 1 {
             let poly = parse_polygon(args, &mut stream)?;
-            scene.primitives.push(Box::new(poly));
-        }
-        else {
+            scene.add_primitive(Box::new(poly), surface.clone());
+        } else if command == "f" && args.len() == 8 {
+            let phong = parse_phong(args)?;
+            surface = Rc::new(phong);
+        } else if command == "l" && args.len() == 3 {
+            let light = parse_white_light(args)?;
+            scene.lights.push(light);
+        } else if command == "l" && args.len() == 6 {
+            let light = parse_colored_light(args)?;
+            scene.lights.push(light);
+        } else {
             eprintln!("unrecognized command: {}", line);
         }
     }

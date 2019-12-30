@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::vector_math;
 use crate::vector_math::Vector;
 use crate::vector_math::Point;
@@ -9,6 +10,12 @@ pub struct Color {
     pub r: f32,
     pub g: f32,
     pub b: f32
+}
+
+#[derive(Debug, Clone)]
+pub struct Light {
+    pub position: Point,
+    pub color: Color
 }
 
 pub struct View {
@@ -27,26 +34,42 @@ impl View {
     }
 }
 
+pub trait Surface {
+    fn get_visible_color(&self,
+        normal: &Vector,
+        view: &Vector,
+        light_direction: &Vector,
+        light_color: &Color) -> Color;
+}
+
 pub struct Scene {
     pub background: Color,
-    pub primitives: Vec<Box<dyn Intersect>>
+    pub lights: Vec<Light>,
+    primitives: Vec<(Box<dyn Intersect>, Rc<dyn Surface>)>
 }
 
 impl Scene {
     pub fn new() -> Scene {
         Scene {
             background: Color {r: 1.0, g: 1.0, b: 1.0},
+            lights: vec! {},
             primitives: vec! {}
         }
     }
+
+    pub fn add_primitive(&mut self,
+            primitive: Box<dyn Intersect>,
+            surface: Rc<dyn Surface>) {
+        self.primitives.push((primitive, surface));
+    }
 }
 
-impl Intersect for Scene {
-    fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
-            Option<IntersectResult> {
-        for primitive in &self.primitives {
+impl Scene {
+    fn trace(&self, src: &Point, ray: &Vector, near: f32) ->
+            Option<(IntersectResult, Rc<dyn Surface>)> {
+        for (primitive, surface) in &self.primitives {
             if let Some(result) = primitive.intersect(src, ray, near) {
-                return Some(result);
+                return Some((result, surface.clone()));
             }
         }
         None
@@ -116,15 +139,26 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
 }
 
 fn trace(src: &Point, ray: &Vector, scene: &Scene, near: f32) -> Color {
-    let intersect_result = scene.intersect(src, ray, near);
-    if let None = intersect_result {
-        return scene.background.clone();
+    let trace_result = scene.trace(src, ray, near);
+
+    if let Some((intersect_result, surface)) = trace_result {
+        let surface_position = src + ray * intersect_result.dist;
+        let mut total_color = Color {r: 0.0, g: 0.0, b: 0.0};
+        for light in &scene.lights {
+            let mut surface_to_light = &light.position - &surface_position;
+            surface_to_light.normalize();
+
+            let color = surface.get_visible_color(
+                &intersect_result.normal, ray, &surface_to_light, &light.color);
+
+            // TO DO:  Should this be clamped?  Scaled?
+            total_color.r += color.r;
+            total_color.g += color.g;
+            total_color.b += color.b;
+        }
+        //return total_color;
+        return Color {r: 1.0, g: 1.0, b: 1.0};
     }
 
-    // TO DO:  Actual math and stuff to find the right color
-    Color {
-        r: 1.0,
-        g: 1.0,
-        b: 1.0
-    }
+    scene.background.clone()
 }
