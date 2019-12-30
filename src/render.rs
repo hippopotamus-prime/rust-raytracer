@@ -62,17 +62,26 @@ impl Scene {
             surface: Rc<dyn Surface>) {
         self.primitives.push((primitive, surface));
     }
-}
 
-impl Scene {
     fn trace(&self, src: &Point, ray: &Vector, near: f32) ->
             Option<(IntersectResult, Rc<dyn Surface>)> {
+        let mut best_result: Option<(IntersectResult, Rc<dyn Surface>)> = None;
+
         for (primitive, surface) in &self.primitives {
-            if let Some(result) = primitive.intersect(src, ray, near) {
-                return Some((result, surface.clone()));
+            if let Some(intersection) = primitive.intersect(src, ray, near) {
+                match &best_result {
+                    Some((prior_best_intersection, _)) => {
+                        if intersection.dist < prior_best_intersection.dist {
+                            best_result = Some((intersection, surface.clone()));
+                        }
+                    },
+                    None => {
+                        best_result = Some((intersection, surface.clone()));
+                    }
+                }
             }
         }
-        None
+        best_result
     }
 }
 
