@@ -226,18 +226,18 @@ impl Intersect for Polygon {
                 let fnb = &self.vertices[(nearest_forward_index + 1) %
                         self.vertices.len()].normal;
                 let forward_normal = vector_math::interpolate(
-                    fna, fnb, nearest_forward_scale);
+                    fna, fnb, nearest_forward_scale).normalized();
 
                 let rna = &self.vertices[nearest_reverse_index].normal;
                 let rnb = &self.vertices[(nearest_reverse_index + 1) %
                         self.vertices.len()].normal;
                 let reverse_normal = vector_math::interpolate(
-                    rna, rnb, nearest_reverse_scale);
+                    rna, rnb, nearest_reverse_scale).normalized();
 
                 // Remember reverse_dist is negative, forward_dist is positive.
                 let scale = reverse_dist / (reverse_dist - forward_dist);
                 let normal = vector_math::interpolate(
-                    &forward_normal, &reverse_normal, scale);
+                    &forward_normal, &reverse_normal, scale).normalized();
 
                 Some(IntersectResult {
                     normal: normal,
