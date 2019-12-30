@@ -1,0 +1,23 @@
+# For testing - red and green squares in line with a light, red casting a
+# shadow on green, viewed at an angle.
+b 0 0 0
+v
+from -8 8 0
+at 0 0 0
+up 0 1 0
+angle 45
+hither 0.1
+resolution 512 512
+l -5 0 0
+f 1 0 0 0.5 0.5 1 0 0
+p 4
+0 1 1
+0 1 -1
+0 -1 -1
+0 -1 1
+f 0 1 0 0.5 0.5 1 0 0
+p 4
+2 2 2
+2 2 -2
+2 -2 -2
+2 -2 2

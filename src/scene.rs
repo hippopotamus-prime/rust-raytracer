@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::ops::Deref;
 use crate::vector_math::Point;
 use crate::vector_math::Vector;
 use crate::render::Color;
@@ -37,21 +38,36 @@ impl Scene {
     }
 
     pub fn trace(&self, src: &Point, ray: &Vector, near: f32) -> Color {
-        let intersection = self.intersect_surface(src, ray, near);
+        let intersection = self.intersect_surface(src, ray, near, None);
 
-        if let Some((normal, distance, surface)) = intersection {
+        if let Some((normal, distance, surface, primitive)) = intersection {
             let surface_position = src + ray * distance;
             let mut total_color = Color {r: 0.0, g: 0.0, b: 0.0};
+
             for light in &self.lights {
-                let mut surface_to_light = &light.position - &surface_position;
-                surface_to_light.normalize();
-    
-                let color = surface.get_visible_color(
-                    &normal, ray, &surface_to_light, &light.color);
-    
-                total_color.r += color.r;
-                total_color.g += color.g;
-                total_color.b += color.b;
+                let surface_to_light = &light.position - &surface_position;
+                let light_distance = surface_to_light.magnitude();
+                let light_direction = surface_to_light / light_distance;
+
+                let light_blocked = match self.intersect_surface(
+                        &surface_position,
+                        &light_direction,
+                        0.0,
+                        Some(primitive)) {
+                    Some((_, blocker_distance, _, _)) => {
+                        blocker_distance <= light_distance
+                    },
+                    None => false
+                };
+
+                if !light_blocked {
+                    let color = surface.get_visible_color(
+                        &normal, ray, &light_direction, &light.color);
+
+                    total_color.r += color.r;
+                    total_color.g += color.g;
+                    total_color.b += color.b;
+                }
             }
             total_color.clamp();
             return total_color;
@@ -60,23 +76,34 @@ impl Scene {
         self.background.clone()
     }
 
-    fn intersect_surface(&self, src: &Point, ray: &Vector, near: f32) ->
-            Option<(Vector, f32, Rc<dyn Surface>)> {
-        let mut best_result: Option<(Vector, f32, Rc<dyn Surface>)> = None;
+    fn intersect_surface(&self,
+        src: &Point,
+        ray: &Vector,
+        near: f32,
+        ignore: Option<&dyn Intersect>) ->
+                    Option<(Vector, f32, Rc<dyn Surface>, &dyn Intersect)> {
+        let mut best_result:
+            Option<(Vector, f32, Rc<dyn Surface>, &dyn Intersect)> = None;
 
         for (primitive, surface) in &self.primitives {
+            if let Some(ignored_primitive) = ignore {
+                if ignored_primitive as *const _ ==
+                        primitive.deref() as *const _ {
+                    continue;
+                }
+            }
+
             if let Some(intersection) = primitive.intersect(src, ray, near) {
-                match &best_result {
-                    Some((_, prior_nearest, _)) => {
-                        if intersection.dist < *prior_nearest {
-                            best_result = Some((intersection.normal,
-                                intersection.dist, surface.clone()));
-                        }
-                    },
-                    None => {
-                        best_result = Some((intersection.normal,
-                            intersection.dist, surface.clone()));
-                    }
+                let better_result_found = match &best_result {
+                    Some((_, prior_nearest, _, _)) =>
+                        intersection.dist < *prior_nearest,
+                    None =>
+                        true
+                };
+
+                if better_result_found {
+                    best_result = Some((intersection.normal,
+                        intersection.dist, surface.clone(), primitive.deref()));
                 }
             }
         }
