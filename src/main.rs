@@ -7,6 +7,7 @@ mod nff;
 mod render;
 mod ppm;
 mod phong;
+mod scene;
 
 
 fn main() -> Result<(), Box<dyn Error>> {

@@ -1,9 +1,7 @@
-use std::rc::Rc;
 use crate::vector_math;
 use crate::vector_math::Vector;
 use crate::vector_math::Point;
-use crate::intersect::Intersect;
-use crate::intersect::IntersectResult;
+use crate::scene::Scene;
 
 #[derive(Debug, Clone)]
 pub struct Color {
@@ -24,12 +22,6 @@ impl Color {
             self.b = 1.0;
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Light {
-    pub position: Point,
-    pub color: Color
 }
 
 pub struct View {
@@ -54,49 +46,6 @@ pub trait Surface {
         view: &Vector,
         light_direction: &Vector,
         light_color: &Color) -> Color;
-}
-
-pub struct Scene {
-    pub background: Color,
-    pub lights: Vec<Light>,
-    primitives: Vec<(Box<dyn Intersect>, Rc<dyn Surface>)>
-}
-
-impl Scene {
-    pub fn new() -> Scene {
-        Scene {
-            background: Color {r: 1.0, g: 1.0, b: 1.0},
-            lights: vec! {},
-            primitives: vec! {}
-        }
-    }
-
-    pub fn add_primitive(&mut self,
-            primitive: Box<dyn Intersect>,
-            surface: Rc<dyn Surface>) {
-        self.primitives.push((primitive, surface));
-    }
-
-    fn trace(&self, src: &Point, ray: &Vector, near: f32) ->
-            Option<(IntersectResult, Rc<dyn Surface>)> {
-        let mut best_result: Option<(IntersectResult, Rc<dyn Surface>)> = None;
-
-        for (primitive, surface) in &self.primitives {
-            if let Some(intersection) = primitive.intersect(src, ray, near) {
-                match &best_result {
-                    Some((prior_best_intersection, _)) => {
-                        if intersection.dist < prior_best_intersection.dist {
-                            best_result = Some((intersection, surface.clone()));
-                        }
-                    },
-                    None => {
-                        best_result = Some((intersection, surface.clone()));
-                    }
-                }
-            }
-        }
-        best_result
-    }
 }
 
 pub struct RenderTarget {
@@ -155,32 +104,8 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
                 (target.width as f32);
 
             let ray = (&forward + &up * sy + &right * sx).normalized();
-            let color = trace(&view.from, &ray, &scene, view.hither);
+            let color = scene.trace(&view.from, &ray, view.hither);
             target.set(i, j, color);
         }
     }
-}
-
-fn trace(src: &Point, ray: &Vector, scene: &Scene, near: f32) -> Color {
-    let trace_result = scene.trace(src, ray, near);
-
-    if let Some((intersect_result, surface)) = trace_result {
-        let surface_position = src + ray * intersect_result.dist;
-        let mut total_color = Color {r: 0.0, g: 0.0, b: 0.0};
-        for light in &scene.lights {
-            let mut surface_to_light = &light.position - &surface_position;
-            surface_to_light.normalize();
-
-            let color = surface.get_visible_color(
-                &intersect_result.normal, ray, &surface_to_light, &light.color);
-
-            total_color.r += color.r;
-            total_color.g += color.g;
-            total_color.b += color.b;
-        }
-        total_color.clamp();
-        return total_color;
-    }
-
-    scene.background.clone()
 }

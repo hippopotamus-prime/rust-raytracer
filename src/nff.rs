@@ -10,10 +10,10 @@ use crate::vector_math::PointNormal;
 use crate::vector_math;
 use crate::polygon::Polygon;
 use crate::render::Color;
-use crate::render::Scene;
 use crate::render::View;
 use crate::phong::Phong;
-use crate::render::Light;
+use crate::scene::Scene;
+use crate::scene::Light;
 
 
 #[derive(Debug, Clone)]
@@ -317,10 +317,10 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
             surface = Rc::new(phong);
         } else if command == "l" && args.len() == 3 {
             let light = parse_white_light(args)?;
-            scene.lights.push(light);
+            scene.add_light(light);
         } else if command == "l" && args.len() == 6 {
             let light = parse_colored_light(args)?;
-            scene.lights.push(light);
+            scene.add_light(light);
         } else {
             eprintln!("unrecognized command: {}", line);
         }
