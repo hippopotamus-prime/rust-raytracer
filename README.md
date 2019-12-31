@@ -9,7 +9,7 @@ Ray tracer in Rust, adapted from [an old C++ project](https://github.com/hippopo
   * [x] 2D Polygons
 * [ ] Various shading models
   * [x] Phong
-  * [ ] Blinn-Phong
+  * [x] Blinn-Phong
 * [ ] Reflection & refraction
 * [x] Point light sources with shadowing
 * [ ] Accelerated rendering with K-D trees

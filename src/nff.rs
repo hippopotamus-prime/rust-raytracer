@@ -13,7 +13,9 @@ use crate::sphere::Sphere;
 use crate::cone::Cone;
 use crate::render::Color;
 use crate::render::View;
+use crate::render::Surface;
 use crate::phong::Phong;
+use crate::blinn_phong::BlinnPhong;
 use crate::scene::Scene;
 use crate::scene::Light;
 
@@ -262,7 +264,8 @@ fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
     })
 }
 
-fn parse_phong(args: &[&str]) -> Result<Phong, Box<dyn Error>> {
+fn parse_fill(use_phong: bool, args: &[&str]) ->
+        Result<Rc<dyn Surface>, Box<dyn Error>> {
     let r = args[0].parse()?;
     let g = args[1].parse()?;
     let b = args[2].parse()?;
@@ -272,15 +275,35 @@ fn parse_phong(args: &[&str]) -> Result<Phong, Box<dyn Error>> {
     let transmittance = args[6].parse()?;
     let refraction_index = args[7].parse()?;
 
-    Ok(Phong {
-        color: Color {r, g, b},
-        diffuse_component: kd,
-        specular_component: ks,
-        shine: shine,
-        reflectance: ks,
-        transmittance: transmittance,
-        refraction_index: refraction_index
-    })
+    // TO DO: The surface types may need a rethink.  The C++ code treated
+    // Phong and Blinn-Phong as different surfaces that could coexist in the
+    // same NFF file using command extensions, but in practice the extensions
+    // were never used.  Here, they're treated as different ways of shading
+    // the same kind of surface, so they're not logically part of the scene.
+    // It might be more appropriate to have a single "SurfaceProperties"
+    // type and feed the shading choice into render::render()?
+
+    if use_phong {
+        Ok(Rc::new(Phong {
+            color: Color {r, g, b},
+            diffuse_component: kd,
+            specular_component: ks,
+            shine: shine,
+            reflectance: ks,
+            transmittance: transmittance,
+            refraction_index: refraction_index
+        }))
+    } else {
+        Ok(Rc::new(BlinnPhong {
+            color: Color {r, g, b},
+            diffuse_component: kd,
+            specular_component: ks,
+            shine: shine,
+            reflectance: ks,
+            transmittance: transmittance,
+            refraction_index: refraction_index
+        }))
+    }
 }
 
 fn parse_white_light(args: &[&str]) -> Result<Light, Box<dyn Error>> {
@@ -322,11 +345,11 @@ fn parse_sphere(args: &[&str]) -> Result<Sphere, Box<dyn Error>> {
     })
 }
 
-pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
+pub fn read(use_phong: bool) -> Result<(View, Scene), Box<dyn Error>> {
     let mut view: Option<View> = None;
     let mut scene = Scene::new();
 
-    let mut surface = Rc::new(Phong {
+    let mut surface: Rc<dyn Surface> = Rc::new(Phong {
         color: Color {r: 1.0, g: 1.0, b: 1.0},
         diffuse_component: 1.0,
         specular_component: 0.0,
@@ -366,8 +389,7 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
             let poly = parse_polygon(args, &mut stream)?;
             scene.add_primitive(Box::new(poly), surface.clone());
         } else if command == "f" && args.len() == 8 {
-            let phong = parse_phong(args)?;
-            surface = Rc::new(phong);
+            surface = parse_fill(use_phong, args)?;
         } else if command == "l" && args.len() == 3 {
             let light = parse_white_light(args)?;
             scene.add_light(light);
