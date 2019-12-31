@@ -4,6 +4,7 @@ mod vector_math;
 mod intersect;
 mod polygon;
 mod sphere;
+mod cone;
 mod nff;
 mod render;
 mod ppm;

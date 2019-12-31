@@ -4,8 +4,8 @@ Ray tracer in Rust, adapted from [an old C++ project](https://github.com/hippopo
 ## Planned Features
 * [ ] Various geometry primitives
   * [x] Spheres
-  * [ ] Cones
-  * [ ] Cylinders
+  * [x] Cones
+  * [x] Cylinders
   * [x] 2D Polygons
 * [ ] Various shading models
   * [x] Phong

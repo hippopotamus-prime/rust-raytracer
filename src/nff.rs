@@ -10,6 +10,7 @@ use crate::vector_math::PointNormal;
 use crate::vector_math;
 use crate::polygon::Polygon;
 use crate::sphere::Sphere;
+use crate::cone::Cone;
 use crate::render::Color;
 use crate::render::View;
 use crate::phong::Phong;
@@ -182,6 +183,24 @@ fn parse_polygon_patch(args: &[&str], stream: &mut std::io::Stdin) ->
     })
 }
 
+fn parse_cone(stream: &mut std::io::Stdin) ->
+        Result<Cone, Box<dyn Error>> {
+    let mut base_line = String::new();
+    stream.read_line(&mut base_line)?;
+    let base_values = parse_values(&base_line, 0, 4)?;
+
+    let mut apex_line = String::new();
+    stream.read_line(&mut apex_line)?;
+    let apex_values = parse_values(&apex_line, 0, 4)?;
+
+    Ok(Cone {
+        base: Point {x: base_values[0], y: base_values[1], z: base_values[2]},
+        apex: Point {x: apex_values[0], y: apex_values[1], z: apex_values[2]},
+        base_radius: base_values[3],
+        apex_radius: apex_values[3]
+    })
+}
+
 fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
         Result<Polygon, Box<dyn Error>> {
     let vertex_count = args[0].parse::<u32>()?;
@@ -338,6 +357,9 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
         } else if command == "s" && args.len() == 4 {
             let sphere = parse_sphere(args)?;
             scene.add_primitive(Box::new(sphere), surface.clone());
+        } else if command == "c" && args.len() == 0 {
+            let cone = parse_cone(&mut stream)?;
+            scene.add_primitive(Box::new(cone), surface.clone());
         } else {
             eprintln!("unrecognized command: {}", line);
         }
