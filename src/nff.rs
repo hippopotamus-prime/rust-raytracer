@@ -201,6 +201,26 @@ fn parse_cone(stream: &mut std::io::Stdin) ->
     })
 }
 
+fn parse_cone_one_line(args: &[&str]) ->
+        Result<Cone, Box<dyn Error>> {
+    let bx = args[0].parse()?;
+    let by = args[1].parse()?;
+    let bz = args[2].parse()?;
+    let br = args[3].parse()?;
+
+    let ax = args[4].parse()?;
+    let ay = args[5].parse()?;
+    let az = args[6].parse()?;
+    let ar = args[7].parse()?;
+
+    Ok(Cone {
+        base: Point {x: bx, y: by, z: bz},
+        apex: Point {x: ax, y: ay, z: az},
+        base_radius: br,
+        apex_radius: ar
+    })
+}
+
 fn parse_polygon(args: &[&str], stream: &mut std::io::Stdin) ->
         Result<Polygon, Box<dyn Error>> {
     let vertex_count = args[0].parse::<u32>()?;
@@ -359,6 +379,9 @@ pub fn read() -> Result<(View, Scene), Box<dyn Error>> {
             scene.add_primitive(Box::new(sphere), surface.clone());
         } else if command == "c" && args.len() == 0 {
             let cone = parse_cone(&mut stream)?;
+            scene.add_primitive(Box::new(cone), surface.clone());
+        } else if command == "c" && args.len() == 8 {
+            let cone = parse_cone_one_line(args)?;
             scene.add_primitive(Box::new(cone), surface.clone());
         } else {
             eprintln!("unrecognized command: {}", line);
