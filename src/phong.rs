@@ -1,4 +1,4 @@
-use crate::render::Color;
+use crate::color::Color;
 use crate::render::Surface;
 use crate::vector_math;
 use crate::vector_math::Vector;
@@ -14,6 +14,14 @@ pub struct Phong {
 }
 
 impl Surface for Phong {
+    fn get_reflectance(&self) -> f32 {
+        self.reflectance
+    }
+
+    fn get_transmittance(&self) -> f32 {
+        self.transmittance
+    }
+
     fn get_visible_color(&self,
             normal: &Vector,
             view: &Vector,

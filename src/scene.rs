@@ -2,9 +2,12 @@ use std::rc::Rc;
 use std::ops::Deref;
 use crate::vector_math::Point;
 use crate::vector_math::Vector;
-use crate::render::Color;
+use crate::color::Color;
 use crate::render::Surface;
 use crate::intersect::Intersect;
+
+const MAX_DEPTH: u32 = 5;
+const MIN_CONTRIBUTION: f32 = 0.003;
 
 #[derive(Debug, Clone)]
 pub struct Light {
@@ -38,7 +41,17 @@ impl Scene {
     }
 
     pub fn trace(&self, src: &Point, ray: &Vector, near: f32) -> Color {
-        let intersection = self.intersect_surface(src, ray, near, None);
+        self.sub_trace(src, ray, near, None, 1.0, 0)
+    }
+
+    fn sub_trace(&self,
+            src: &Point,
+            ray: &Vector,
+            near: f32,
+            ignore: Option<&dyn Intersect>,
+            contribution: f32,
+            depth: u32) -> Color {
+        let intersection = self.intersect_surface(src, ray, near, ignore);
 
         if let Some((normal, distance, surface, primitive)) = intersection {
             let surface_position = src + ray * distance;
@@ -61,14 +74,30 @@ impl Scene {
                 };
 
                 if !light_blocked {
-                    let color = surface.get_visible_color(
+                    let direct_color = surface.get_visible_color(
                         &normal, ray, &light_direction, &light.color);
 
-                    total_color.r += color.r;
-                    total_color.g += color.g;
-                    total_color.b += color.b;
+                    total_color += direct_color;
                 }
             }
+
+            if depth < MAX_DEPTH {
+                let reflection_contribution =
+                    contribution * surface.get_reflectance();
+                if reflection_contribution > MIN_CONTRIBUTION {
+                    let reflected_ray = ray.reflected(&normal);
+                    let reflected_color = self.sub_trace(
+                        &surface_position,
+                        &reflected_ray,
+                        0.0,
+                        Some(primitive),
+                        reflection_contribution,
+                        depth + 1);
+
+                    total_color += reflected_color * surface.get_reflectance();
+                }
+            }
+
             total_color.clamp();
             return total_color;
         }

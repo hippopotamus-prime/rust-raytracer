@@ -2,27 +2,7 @@ use crate::vector_math;
 use crate::vector_math::Vector;
 use crate::vector_math::Point;
 use crate::scene::Scene;
-
-#[derive(Debug, Clone)]
-pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32
-}
-
-impl Color {
-    pub fn clamp(&mut self) {
-        if self.r > 1.0 {
-            self.r = 1.0;
-        }
-        if self.g > 1.0 {
-            self.g = 1.0;
-        }
-        if self.b > 1.0 {
-            self.b = 1.0;
-        }
-    }
-}
+use crate::color::Color;
 
 pub struct View {
     pub from: Point,
@@ -46,6 +26,10 @@ pub trait Surface {
         view: &Vector,
         light_direction: &Vector,
         light_color: &Color) -> Color;
+
+    fn get_reflectance(&self) -> f32;
+
+    fn get_transmittance(&self) -> f32;
 }
 
 pub struct RenderTarget {

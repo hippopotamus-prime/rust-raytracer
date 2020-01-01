@@ -29,6 +29,19 @@ impl Vector {
         let mag = self.magnitude();
         self / mag
     }
+
+    pub fn dot(&self, other: &Vector) -> f32 {
+        dot(self, other)
+    }
+
+    //  normal   result
+    //        \  ^
+    //         \ |
+    //          \|
+    // self ---->x
+    pub fn reflected(&self, normal: &Vector) -> Vector {
+        self - 2.0 * self.dot(normal) * normal
+    }
 }
 
 #[derive(Debug, Clone)]

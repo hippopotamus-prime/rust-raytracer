@@ -11,7 +11,7 @@ use crate::vector_math;
 use crate::polygon::Polygon;
 use crate::sphere::Sphere;
 use crate::cone::Cone;
-use crate::render::Color;
+use crate::color::Color;
 use crate::render::View;
 use crate::render::Surface;
 use crate::phong::Phong;
