@@ -2,15 +2,15 @@
 Ray tracer in Rust, adapted from [an old C++ project](https://github.com/hippopotamus-prime/raytracer)
 
 ## Planned Features
-* [ ] Various geometry primitives
+* [x] Various geometry primitives
   * [x] Spheres
   * [x] Cones
   * [x] Cylinders
   * [x] 2D Polygons
-* [ ] Various shading models
+* [x] Various shading models
   * [x] Phong
   * [x] Blinn-Phong
-* [ ] Reflection & refraction
+* [x] Reflection & refraction
 * [x] Point light sources with shadowing
 * [ ] Accelerated rendering with K-D trees
 * [x] Input in [NFF format](https://github.com/erich666/StandardProceduralDatabases/blob/master/NFF.TXT)

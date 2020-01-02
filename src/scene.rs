@@ -55,46 +55,100 @@ impl Scene {
 
         if let Some((normal, distance, surface, primitive)) = intersection {
             let surface_position = src + ray * distance;
-            let mut total_color = Color {r: 0.0, g: 0.0, b: 0.0};
+            let back_face = normal.dot(ray) > 0.0;
+            let mut total_color = Color::black();
 
-            for light in &self.lights {
-                let surface_to_light = &light.position - &surface_position;
-                let light_distance = surface_to_light.magnitude();
-                let light_direction = surface_to_light / light_distance;
+            // Surfaces are one-sided and invisible if viewed from the back.
+            // However, refracted rays will still hit back faces, so we can't
+            // ignore them completely.
+            if !back_face {
+                for light in &self.lights {
+                    let surface_to_light = &light.position - &surface_position;
+                    let light_distance = surface_to_light.magnitude();
+                    let light_direction = surface_to_light / light_distance;
+        
+                    let light_blocked = match self.intersect_surface(
+                            &surface_position,
+                            &light_direction,
+                            0.0,
+                            Some(primitive)) {
+                        Some((_, blocker_distance, _, _)) => {
+                            blocker_distance <= light_distance
+                        },
+                        None => false
+                    };
+        
+                    if !light_blocked {
+                        let direct_color = surface.get_visible_color(
+                            &normal, ray, &light_direction, &light.color);
+        
+                        total_color += direct_color;
+                    }
+                }
 
-                let light_blocked = match self.intersect_surface(
-                        &surface_position,
-                        &light_direction,
-                        0.0,
-                        Some(primitive)) {
-                    Some((_, blocker_distance, _, _)) => {
-                        blocker_distance <= light_distance
-                    },
-                    None => false
-                };
-
-                if !light_blocked {
-                    let direct_color = surface.get_visible_color(
-                        &normal, ray, &light_direction, &light.color);
-
-                    total_color += direct_color;
+                if depth < MAX_DEPTH {
+                    let reflection_contribution =
+                        contribution * surface.get_reflectance();
+                    if reflection_contribution > MIN_CONTRIBUTION {
+                        let reflected_ray = ray.reflected(&normal);
+                        let reflected_color = self.sub_trace(
+                            &surface_position,
+                            &reflected_ray,
+                            0.0,
+                            Some(primitive),
+                            reflection_contribution,
+                            depth + 1);
+    
+                        total_color += reflected_color *
+                            surface.get_reflectance();
+                    }
                 }
             }
 
             if depth < MAX_DEPTH {
-                let reflection_contribution =
-                    contribution * surface.get_reflectance();
-                if reflection_contribution > MIN_CONTRIBUTION {
-                    let reflected_ray = ray.reflected(&normal);
-                    let reflected_color = self.sub_trace(
+                // TO DO:  This doesn't account for the thickness of the
+                // intersected object, but a physically accurate rendering
+                // should.
+                let transmittance =
+                    if back_face {
+                        // Special case - the back faces of fully opaque
+                        // surfaces have zero transmittance, but other surfaces
+                        // transmit fully. This allows rays to exit translucent
+                        // solids cleanly, but makes backwards opaque surfaces
+                        // show up as black.
+                        if surface.get_transmittance() > MIN_CONTRIBUTION {
+                            1.0
+                        } else {
+                            0.0
+                        }
+                    } else {
+                        surface.get_transmittance()
+                    };
+                let refraction_contribution = contribution * transmittance;
+                if refraction_contribution > MIN_CONTRIBUTION {
+                    let refracted_ray =
+                        if back_face {
+                            ray.refracted(&-normal,
+                                1.0 / surface.get_refraction_index())
+                        } else {
+                            ray.refracted(&normal,
+                                surface.get_refraction_index())
+                        };
+
+                    // TO DO:  Ignoring the intersected primitive doesn't work
+                    // here since a refracted ray can hit the same primitive
+                    // twice. The 0.0001 near distance avoids "refraction
+                    // acne", but the ideal solution is to pass Some(primitive)
+                    // and somehow only ignore the near-side intersection.
+                    let refracted_color = self.sub_trace(
                         &surface_position,
-                        &reflected_ray,
-                        0.0,
-                        Some(primitive),
-                        reflection_contribution,
+                        &refracted_ray,
+                        0.0001,
+                        None,
+                        refraction_contribution,
                         depth + 1);
 
-                    total_color += reflected_color * surface.get_reflectance();
+                        total_color += refracted_color * transmittance;
                 }
             }
 

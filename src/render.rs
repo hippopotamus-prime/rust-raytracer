@@ -30,6 +30,8 @@ pub trait Surface {
     fn get_reflectance(&self) -> f32;
 
     fn get_transmittance(&self) -> f32;
+
+    fn get_refraction_index(&self) -> f32;
 }
 
 pub struct RenderTarget {

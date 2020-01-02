@@ -22,6 +22,10 @@ impl Surface for Phong {
         self.transmittance
     }
 
+    fn get_refraction_index(&self) -> f32 {
+        self.refraction_index
+    }
+
     fn get_visible_color(&self,
             normal: &Vector,
             view: &Vector,

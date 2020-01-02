@@ -36,11 +36,33 @@ impl Vector {
 
     //  normal   result
     //        \  ^
-    //         \ |
-    //          \|
-    // self ---->x
+    //         \ | __ surface
+    //          \|/
+    // self ---->*
+    //          /
+    //         /
     pub fn reflected(&self, normal: &Vector) -> Vector {
         self - 2.0 * self.dot(normal) * normal
+    }
+
+    //             | surface
+    //             |
+    //   self ---->|
+    // normal <----|\
+    //             | \
+    //             |  \
+    //                 result
+    pub fn refracted(&self, normal: &Vector, refraction_index: f32) -> Vector {
+        let dp = self.dot(normal);
+        let a = 1.0 - ((1.0 - dp * dp) / (refraction_index * refraction_index));
+
+        if a >= 0.0 {
+            let b = a.sqrt() + dp / refraction_index;
+            self / refraction_index - b * normal
+        } else {
+            // Total internal reflection
+            self.reflected(normal)
+        }
     }
 }
 
