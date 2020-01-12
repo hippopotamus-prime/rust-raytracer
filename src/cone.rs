@@ -1,8 +1,6 @@
-use crate::vector_math::Point;
-use crate::vector_math::Vector;
 use crate::vector_math;
-use crate::intersect::Intersect;
-use crate::intersect::IntersectResult;
+use crate::vector_math::{Point, Vector};
+use crate::shape::{Shape, IntersectResult, BoundingBox};
 
 // Generalized cone & cylinder - cones have apex_radius 0, cylinders have
 // apex_radius = base_radius, cone frustums are somewhere in between.
@@ -13,7 +11,68 @@ pub struct Cone {
     pub apex_radius: f32
 }
 
-impl Intersect for Cone {
+impl Shape for Cone {
+    fn bounding_box(&self) -> BoundingBox {
+        // The box surrounds the central line of the cone, extended out by
+        // the x/y/z components of the base and apex.  To get a tight bound,
+        // we'll project each axis onto the plane of the base/apex disc,
+        // scale by the base/apex radius, then take the axial component of the
+        // result.
+        //
+        // For example for x and the base, that works out to:
+        // n = apex - base, normalized
+        // [base_radius * ( {1, 0, 0} - n * ({1, 0, 0} dot n) )].x
+        // = [base_radius * ( {1, 0, 0} - n * n.dx )].x
+        // = [base_radius * (1 - n.dx * n.dx)]
+        //
+        // (For the apex, n is reversed, but the math makes it not matter.)
+
+        let n = (&self.apex - &self.base).normalized();
+        let base_x_extra = self.base_radius * (1.0 - n.dx * n.dx);
+        let base_y_extra = self.base_radius * (1.0 - n.dy * n.dy);
+        let base_z_extra = self.base_radius * (1.0 - n.dz * n.dz);
+        let apex_x_extra = self.apex_radius * (1.0 - n.dx * n.dx);
+        let apex_y_extra = self.apex_radius * (1.0 - n.dy * n.dy);
+        let apex_z_extra = self.apex_radius * (1.0 - n.dz * n.dz);
+
+        let (corner_x, extent_x) = if self.base.x < self.apex.x {
+            (self.base.x - base_x_extra,
+                self.apex.x - self.base.x + base_x_extra + apex_x_extra)
+        } else {
+            (self.apex.x - apex_x_extra,
+                self.base.x - self.apex.x + base_x_extra + apex_x_extra)
+        };
+
+        let (corner_y, extent_y) = if self.base.y < self.apex.y {
+            (self.base.y - base_y_extra,
+                self.apex.y - self.base.y + base_y_extra + apex_y_extra)
+        } else {
+            (self.apex.y - apex_y_extra,
+                self.base.y - self.apex.y + base_y_extra + apex_y_extra)
+        };
+
+        let (corner_z, extent_z) = if self.base.z < self.apex.z {
+            (self.base.z - base_z_extra,
+                self.apex.z - self.base.z + base_z_extra + apex_z_extra)
+        } else {
+            (self.apex.z - apex_z_extra,
+                self.base.z - self.apex.z + base_z_extra + apex_z_extra)
+        };
+
+        BoundingBox {
+            corner: Point {
+                x: corner_x,
+                y: corner_y,
+                z: corner_z
+            },
+            extent: Vector {
+                dx: extent_x,
+                dy: extent_y,
+                dz: extent_z
+            }
+        }
+    }
+
     fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
             Option<IntersectResult> {
         // Notes copied from the C++ version...

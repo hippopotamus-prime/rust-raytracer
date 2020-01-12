@@ -1,16 +1,60 @@
-use crate::vector_math::Point;
-use crate::vector_math::Vector;
-use crate::vector_math::PointNormal;
 use crate::vector_math;
-use crate::intersect::Intersect;
-use crate::intersect::IntersectResult;
+use crate::vector_math::{Point, Vector, PointNormal};
+use crate::shape::{Shape, IntersectResult, BoundingBox};
 
 
 pub struct Polygon {
     pub vertices: Vec<PointNormal>
 }
 
-impl Intersect for Polygon {
+impl Shape for Polygon {
+    fn  bounding_box(&self) -> BoundingBox {
+        let mut min_x = self.vertices[0].point.x;
+        let mut max_x = min_x;
+        let mut min_y = self.vertices[0].point.y;
+        let mut max_y = min_y;
+        let mut min_z = self.vertices[0].point.z;
+        let mut max_z = min_z;
+
+        for vertex in &self.vertices[1..] {
+            if vertex.point.x < min_x {
+                min_x = vertex.point.x;
+            }
+            if vertex.point.x > max_x {
+                max_x = vertex.point.x;
+            }
+            if vertex.point.y < min_y {
+                min_y = vertex.point.y;
+            }
+            if vertex.point.y > max_y {
+                max_y = vertex.point.y;
+            }
+            if vertex.point.z < min_z {
+                min_z = vertex.point.z;
+            }
+            if vertex.point.z > max_z {
+                max_z = vertex.point.z;
+            }
+        }
+
+        // TO DO: Does this work just as well?
+        // let min_x = self.vertices.iter().map(|pn| pn.point.x).min();
+        // ...
+
+        BoundingBox {
+            corner: Point {
+                x: min_x,
+                y: min_y,
+                z: min_z
+            },
+            extent: Vector {
+                dx: max_x - min_x,
+                dy: max_y - min_y,
+                dz: max_z - min_z
+            }
+        }
+    }
+
     fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
             Option<IntersectResult> {
 

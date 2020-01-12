@@ -4,7 +4,7 @@ use crate::vector_math::Point;
 use crate::vector_math::Vector;
 use crate::color::Color;
 use crate::render::Surface;
-use crate::intersect::Intersect;
+use crate::shape::Shape;
 
 const MAX_DEPTH: u32 = 5;
 const MIN_CONTRIBUTION: f32 = 0.003;
@@ -18,7 +18,7 @@ pub struct Light {
 pub struct Scene {
     pub background: Color,
     lights: Vec<Light>,
-    primitives: Vec<(Box<dyn Intersect>, Rc<dyn Surface>)>
+    primitives: Vec<(Box<dyn Shape>, Rc<dyn Surface>)>
 }
 
 impl Scene {
@@ -31,7 +31,7 @@ impl Scene {
     }
 
     pub fn add_primitive(&mut self,
-            primitive: Box<dyn Intersect>,
+            primitive: Box<dyn Shape>,
             surface: Rc<dyn Surface>) {
         self.primitives.push((primitive, surface));
     }
@@ -48,7 +48,7 @@ impl Scene {
             src: &Point,
             ray: &Vector,
             near: f32,
-            ignore: Option<&dyn Intersect>,
+            ignore: Option<&dyn Shape>,
             contribution: f32,
             depth: u32) -> Color {
         let intersection = self.intersect_surface(src, ray, near, ignore);
@@ -163,10 +163,10 @@ impl Scene {
         src: &Point,
         ray: &Vector,
         near: f32,
-        ignore: Option<&dyn Intersect>) ->
-                    Option<(Vector, f32, Rc<dyn Surface>, &dyn Intersect)> {
+        ignore: Option<&dyn Shape>) ->
+                    Option<(Vector, f32, Rc<dyn Surface>, &dyn Shape)> {
         let mut best_result:
-            Option<(Vector, f32, Rc<dyn Surface>, &dyn Intersect)> = None;
+            Option<(Vector, f32, Rc<dyn Surface>, &dyn Shape)> = None;
 
         for (primitive, surface) in &self.primitives {
             if let Some(ignored_primitive) = ignore {

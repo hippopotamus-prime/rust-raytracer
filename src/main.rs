@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgGroup};
 
 mod vector_math;
 mod color;
-mod intersect;
+mod shape;
 mod polygon;
 mod sphere;
 mod cone;

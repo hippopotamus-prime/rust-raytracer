@@ -1,15 +1,29 @@
-use crate::vector_math::Point;
-use crate::vector_math::Vector;
 use crate::vector_math;
-use crate::intersect::Intersect;
-use crate::intersect::IntersectResult;
+use crate::vector_math::{Point, Vector};
+use crate::shape::{Shape, IntersectResult, BoundingBox};
+
 
 pub struct Sphere {
     pub center: Point,
     pub radius: f32
 }
 
-impl Intersect for Sphere {
+impl Shape for Sphere {
+    fn bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            corner: Point {
+                x: self.center.x - self.radius,
+                y: self.center.y - self.radius,
+                z: self.center.z - self.radius
+            },
+            extent: Vector {
+                dx: self.radius * 2.0,
+                dy: self.radius * 2.0,
+                dz: self.radius * 2.0
+            }
+        }
+    }
+
     fn intersect(&self, src: &Point, ray: &Vector, near: f32) ->
             Option<IntersectResult> {
         // Find a solution to the equations:
