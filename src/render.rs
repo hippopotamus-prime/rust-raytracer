@@ -5,12 +5,19 @@ use crate::scene::Scene;
 use crate::color::Color;
 
 pub struct View {
+    // Position in space of the viewer
     pub from: Point,
+    // Position in space that will be visible at the center of the view
     pub at: Point,
+    // Orientation of the view in space
     pub up: Vector,
+    // Field of view angle in degrees (vertical)
     pub angle: f32,
+    // Near-clip distance; objects in space closer to the viewer are invisible
     pub hither: f32,
+    // Width of the view in pixels
     pub width: u32,
+    // Height of the view in pixels
     pub height: u32
 }
 
