@@ -1,7 +1,6 @@
 use std::rc::Rc;
 use std::ops::Deref;
-use crate::vector_math::Point;
-use crate::vector_math::Vector;
+use crate::vector_math::{Point, Vector};
 use crate::color::Color;
 use crate::render::Surface;
 use crate::shape::Shape;
@@ -15,10 +14,15 @@ pub struct Light {
     pub color: Color
 }
 
+struct Primitive {
+    shape: Box<dyn Shape>,
+    surface: Rc<dyn Surface>
+}
+
 pub struct Scene {
     pub background: Color,
     lights: Vec<Light>,
-    primitives: Vec<(Box<dyn Shape>, Rc<dyn Surface>)>
+    primitives: Vec<Primitive>
 }
 
 impl Scene {
@@ -31,9 +35,13 @@ impl Scene {
     }
 
     pub fn add_primitive(&mut self,
-            primitive: Box<dyn Shape>,
+            shape: Box<dyn Shape>,
             surface: Rc<dyn Surface>) {
-        self.primitives.push((primitive, surface));
+        self.primitives.push(
+            Primitive {
+                shape: shape,
+                surface: surface
+            });
     }
 
     pub fn add_light(&mut self, light: Light) {
@@ -168,15 +176,15 @@ impl Scene {
         let mut best_result:
             Option<(Vector, f32, Rc<dyn Surface>, &dyn Shape)> = None;
 
-        for (primitive, surface) in &self.primitives {
+        for primitive in &self.primitives {
             if let Some(ignored_primitive) = ignore {
                 if ignored_primitive as *const _ ==
-                        primitive.deref() as *const _ {
+                        primitive.shape.deref() as *const _ {
                     continue;
                 }
             }
 
-            if let Some(intersection) = primitive.intersect(src, ray, near) {
+            if let Some(intersection) = primitive.shape.intersect(src, ray, near) {
                 let better_result_found = match &best_result {
                     Some((_, prior_nearest, _, _)) =>
                         intersection.dist < *prior_nearest,
@@ -186,7 +194,8 @@ impl Scene {
 
                 if better_result_found {
                     best_result = Some((intersection.normal,
-                        intersection.dist, surface.clone(), primitive.deref()));
+                        intersection.dist, primitive.surface.clone(),
+                        primitive.shape.deref()));
                 }
             }
         }
