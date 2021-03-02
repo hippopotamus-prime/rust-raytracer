@@ -2,8 +2,9 @@ use std::rc::Rc;
 use std::ops::Deref;
 use crate::vector_math::{Point, Vector};
 use crate::color::Color;
-use crate::render::Surface;
+use crate::render::{Surface, Primitive};
 use crate::shape::Shape;
+use crate::space_partition::SpacePartition;
 
 const MAX_DEPTH: u32 = 5;
 const MIN_CONTRIBUTION: f32 = 0.003;
@@ -12,11 +13,6 @@ const MIN_CONTRIBUTION: f32 = 0.003;
 pub struct Light {
     pub position: Point,
     pub color: Color
-}
-
-struct Primitive {
-    shape: Box<dyn Shape>,
-    surface: Rc<dyn Surface>
 }
 
 pub struct Scene {
@@ -46,6 +42,10 @@ impl Scene {
 
     pub fn add_light(&mut self, light: Light) {
         self.lights.push(light);
+    }
+
+    pub fn build_space_partition(&self) -> SpacePartition {
+        SpacePartition::from_primitives(&self.primitives)
     }
 
     // Top-level tracing funtion. Given `ray` originating from the viewer at

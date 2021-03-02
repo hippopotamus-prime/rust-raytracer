@@ -6,6 +6,7 @@ pub struct IntersectResult {
     pub dist: f32
 }
 
+#[derive(Debug, Clone)]
 pub struct BoundingBox {
     pub corner: Point,
     pub extent: Vector
@@ -19,14 +20,58 @@ pub trait Shape {
 }
 
 impl BoundingBox {
-    fn volume(&self) -> f32 {
+    pub fn zero() -> BoundingBox {
+        BoundingBox {
+            corner: Point::origin(),
+            extent: Vector {
+                dx: 0.0,
+                dy: 0.0,
+                dz: 0.0
+            }
+        }
+    }
+
+    pub fn min_corner(&self) -> &Point {
+        &self.corner
+    }
+
+    pub fn max_corner(&self) -> Point {
+        &self.corner + &self.extent
+    }
+
+    pub fn volume(&self) -> f32 {
         self.extent.dx * self.extent.dy * self.extent.dz
     }
 
-    fn surface_area(&self) -> f32 {
+    pub fn surface_area(&self) -> f32 {
         self.extent.dx * self.extent.dy * 2.0 +
         self.extent.dy * self.extent.dz * 2.0 +
         self.extent.dx * self.extent.dz * 2.0
+    }
+
+    pub fn expand_to_fit(&self, other: &BoundingBox) -> BoundingBox {
+        let min_x = self.corner.x.min(other.corner.x);
+        let min_y = self.corner.y.min(other.corner.y);
+        let min_z = self.corner.z.min(other.corner.z);
+
+        let self_far_corner = &self.corner + &self.extent;
+        let other_far_corner = &other.corner + &other.extent;
+        let max_x = self_far_corner.x.max(other_far_corner.x);
+        let max_y = self_far_corner.y.max(other_far_corner.y);
+        let max_z = self_far_corner.z.max(other_far_corner.z);
+
+        BoundingBox {
+            corner: Point {
+                x: min_x,
+                y: min_y,
+                z: min_z
+            },
+            extent: Vector {
+                dx: max_x - min_x,
+                dy: max_y - min_y,
+                dz: max_z - min_z
+            }
+        }
     }
 
     fn intersect(&self, src: &Point, ray: &Vector, near_cull: f32) -> bool {

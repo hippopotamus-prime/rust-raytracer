@@ -14,6 +14,13 @@ pub struct Vector {
     pub dz: f32
 }
 
+#[derive(Clone, Copy)]
+pub enum Axis {
+    X,
+    Y,
+    Z
+}
+
 impl Vector {
     pub fn magnitude(&self) -> f32 {
         let m2 = self.dx * self.dx + self.dy * self.dy + self.dz * self.dz;
@@ -62,6 +69,32 @@ impl Vector {
         } else {
             // Total internal reflection
             self.reflected(normal)
+        }
+    }
+
+    pub fn component(&self, axis: Axis) -> f32 {
+        match axis {
+            Axis::X => self.dx,
+            Axis::Y => self.dy,
+            Axis::Z => self.dz
+        }
+    }
+}
+
+impl Point {
+    pub fn origin() -> Point {
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0
+        }
+    }
+
+    pub fn component(&self, axis: Axis) -> f32 {
+        match axis {
+            Axis::X => self.x,
+            Axis::Y => self.y,
+            Axis::Z => self.z
         }
     }
 }

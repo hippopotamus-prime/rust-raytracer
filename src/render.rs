@@ -1,8 +1,10 @@
+use std::rc::Rc;
 use crate::vector_math;
 use crate::vector_math::Vector;
 use crate::vector_math::Point;
 use crate::scene::Scene;
 use crate::color::Color;
+use crate::shape::Shape;
 
 pub struct View {
     // Position in space of the viewer
@@ -39,6 +41,11 @@ pub trait Surface {
     fn get_transmittance(&self) -> f32;
 
     fn get_refraction_index(&self) -> f32;
+}
+
+pub struct Primitive {
+    pub shape: Box<dyn Shape>,
+    pub surface: Rc<dyn Surface>
 }
 
 pub struct RenderTarget {
