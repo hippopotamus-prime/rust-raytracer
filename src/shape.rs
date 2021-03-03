@@ -1,5 +1,4 @@
-use crate::vector_math::Point;
-use crate::vector_math::Vector;
+use crate::vector_math::{Point, Vector, Axis};
 
 pub struct IntersectResult {
     pub normal: Vector,
@@ -47,6 +46,14 @@ impl BoundingBox {
         self.extent.dx * self.extent.dy * 2.0 +
         self.extent.dy * self.extent.dz * 2.0 +
         self.extent.dx * self.extent.dz * 2.0
+    }
+
+    pub fn face_area(&self, axis: Axis) -> f32 {
+        match axis {
+            Axis::X => self.extent.dy * self.extent.dz,
+            Axis::Y => self.extent.dx * self.extent.dz,
+            Axis::Z => self.extent.dx * self.extent.dy
+        }
     }
 
     pub fn expand_to_fit(&self, other: &BoundingBox) -> BoundingBox {

@@ -44,7 +44,7 @@ impl Scene {
         self.lights.push(light);
     }
 
-    pub fn build_space_partition(&self) -> SpacePartition {
+    pub fn build_space_partition(&self) -> Option<SpacePartition> {
         SpacePartition::from_primitives(&self.primitives)
     }
 
