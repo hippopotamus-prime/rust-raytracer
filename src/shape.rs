@@ -81,7 +81,7 @@ impl BoundingBox {
         }
     }
 
-    fn intersect(&self, src: &Point, ray: &Vector, near_cull: f32) -> bool {
+    pub fn intersect(&self, src: &Point, ray: &Vector, near_cull: f32) -> bool {
 
         // TO DO - speed this up using the stuff from the Pluecker paper.
 

@@ -1,4 +1,6 @@
-use crate::vector_math::Axis;
+use std::ops::Deref;
+use crate::vector_math::{Axis, Point, Vector};
+use crate::shape::Shape;
 use crate::shape::BoundingBox;
 use crate::render::Primitive;
 
@@ -198,8 +200,6 @@ fn appraise(primitive_count: usize, bounding_box: &BoundingBox) -> f32 {
 }
 
 impl<'a> SpacePartition<'a> {
-    // TO DO: Write code to intersect a partition
-
     // TO DO: Rendering the scene should involve building a partition and
     // then tracing rays through it, instead of linearly walking through the
     // scene's primitives
@@ -264,4 +264,122 @@ impl<'a> SpacePartition<'a> {
             }
         }
     }
+
+    fn intersect(&self,
+        src: &Point,
+        ray: &Vector,
+        near: f32,
+        ignore: Option<&dyn Shape>) ->
+            Option<(Vector, f32, &Primitive)> {
+
+        // Quick test - does the ray hit the bounding box for this partition?
+        if !self.bounding_box.intersect(src, ray, near) {
+            // No intersection possible if the ray missed the bounding box.
+            return None;
+        } 
+        
+        match &self.child {
+            ChildNode::Leaf(primitives) => {
+                intersect_primitives(primitives, src, ray, near, ignore)
+            },
+            ChildNode::Interior(node) => {
+                node.intersect(src, ray, near, ignore)
+            }
+        }
+    }
+}
+
+impl<'a> InteriorNode<'a> {
+    fn intersect(&self,
+        src: &Point,
+        ray: &Vector,
+        near: f32,
+        ignore: Option<&dyn Shape>) ->
+            Option<(Vector, f32, &Primitive)> {
+
+        // Intersect whichever sub-partition the ray starts in first, then
+        // hopefully skip the other one.
+
+        if src.component(self.axis) < self.plane {
+            // Starting on the under side of the plane.
+            let under_result = self.under.intersect(src, ray, near, ignore);
+
+            // Need to check the other side in two cases:
+            // - If the ray didn't hit anything, obviously.
+            // - If the ray hit something that spans both halves and
+            //   the intersection is on the other side of the splitting
+            //   plane; in this case we can't say whether or not the
+            //   found intersection is actually the closest one.
+            let check_over = match under_result {
+                None => true,
+                Some((_, distance, _)) => {
+                    let endpoint = src + ray * distance;
+                    endpoint.component(self.axis) > self.plane
+                }
+            };
+
+            if check_over {
+                self.over.intersect(src, ray, near, ignore)
+            } else {
+                under_result
+            }
+        } else {
+            // Starting on the over side of the plane.
+            let over_result =
+                self.over.intersect(src, ray, near, ignore);
+
+            let check_under = match over_result {
+                None => true,
+                Some((_, distance, _)) => {
+                    let endpoint = src + ray * distance;
+                    endpoint.component(self.axis) < self.plane
+                }
+            };
+
+            if check_under {
+                self.under.intersect(src, ray, near, ignore)
+            } else {
+                over_result
+            }
+        }
+    }
+}
+
+fn intersect_primitives<'a>(
+    primitives: &Vec<&'a Primitive>,
+    src: &Point,
+    ray: &Vector,
+    near: f32,
+    ignore: Option<&dyn Shape>) ->
+        Option<(Vector, f32, &'a Primitive)> {
+
+    // Test all the prmitives using a linear search and return the nearest
+    // intersection.
+    let mut best_result: Option<(Vector, f32, &Primitive)> = None;
+
+    for primitive in primitives {
+        if let Some(ignored_shape) = ignore {
+            if ignored_shape as *const _ ==
+                    primitive.shape.deref() as *const _ {
+                continue;
+            }
+        }
+
+        if let Some(intersection) =
+                primitive.shape.intersect(src, ray, near) {
+            let better_result_found = match &best_result {
+                Some((_, prior_nearest, _)) =>
+                    intersection.dist < *prior_nearest,
+                None =>
+                    true
+            };
+
+            if better_result_found {
+                best_result = Some((intersection.normal,
+                    intersection.dist,
+                    primitive));
+            }
+        }
+    }
+    best_result
 }
