@@ -205,12 +205,14 @@ impl<'a> SpacePartition<'a> {
     // scene's primitives
 
     pub fn from_primitives(
-            primitives: &'a[Primitive]) -> Option<SpacePartition<'a>> {
+            primitives: &'a[Primitive]) -> SpacePartition<'a> {
 
         if primitives.is_empty() {
-            None
-        }
-        else {
+            SpacePartition {
+                bounding_box: BoundingBox::zero(),
+                child: ChildNode::Leaf(vec![])
+            }
+        } else {
             let first_box = primitives[0].shape.bounding_box();
 
             let mut boxed_primitives =
@@ -223,8 +225,8 @@ impl<'a> SpacePartition<'a> {
                 boxed_primitives.push(BoxedPrimitive(&primitive, bounding_box));
             }
 
-            Some(SpacePartition::from_boxed_primitives(
-                &boxed_primitives, Axis::X, total_box))
+            SpacePartition::from_boxed_primitives(
+                &boxed_primitives, Axis::X, total_box)
         }
     }
 
@@ -265,7 +267,15 @@ impl<'a> SpacePartition<'a> {
         }
     }
 
-    fn intersect(&self,
+    // Given `ray` originating from `src`, find the primitive in the scene
+    // that the ray intersects. If an intersection is found, the return a
+    // tuple of: the surface normal at the intersection point, the distance to
+    // the intersection point, and the primitive that was intersected.
+    //
+    // `near` is a near-clipping distance.
+    //
+    // `ignore` is a primitive to ignore when calculating intersections.
+    pub fn intersect(&self,
         src: &Point,
         ray: &Vector,
         near: f32,

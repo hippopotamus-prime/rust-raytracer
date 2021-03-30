@@ -1,7 +1,6 @@
 use std::rc::Rc;
 use crate::vector_math;
-use crate::vector_math::Vector;
-use crate::vector_math::Point;
+use crate::vector_math::{Vector, Point};
 use crate::scene::Scene;
 use crate::color::Color;
 use crate::shape::Shape;
@@ -92,6 +91,9 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
     // not be perpendicular to forward, but this is.
     let up = vector_math::cross(&right, &forward).normalized() * up_len;
 
+    println!("Building space partition");
+    let space_partition = scene.build_space_partition();
+
     for j in 0..target.height {
         println!("Rendering line {}", j + 1);
 
@@ -104,7 +106,8 @@ pub fn render(view: &View, scene: &Scene, target: &mut RenderTarget) {
                 (target.width as f32);
 
             let ray = (&forward + &up * sy + &right * sx).normalized();
-            let color = scene.trace(&view.from, &ray, view.hither);
+            let color = scene.trace(
+                &space_partition, &view.from, &ray, view.hither);
             target.set(i, j, color);
         }
     }

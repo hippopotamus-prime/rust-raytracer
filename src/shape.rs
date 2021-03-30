@@ -38,9 +38,9 @@ impl BoundingBox {
         &self.corner + &self.extent
     }
 
-    pub fn volume(&self) -> f32 {
-        self.extent.dx * self.extent.dy * self.extent.dz
-    }
+    // pub fn volume(&self) -> f32 {
+    //     self.extent.dx * self.extent.dy * self.extent.dz
+    // }
 
     pub fn surface_area(&self) -> f32 {
         self.extent.dx * self.extent.dy * 2.0 +

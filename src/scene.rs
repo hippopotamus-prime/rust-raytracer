@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use std::ops::Deref;
 use crate::vector_math::{Point, Vector};
 use crate::color::Color;
 use crate::render::{Surface, Primitive};
@@ -44,17 +43,23 @@ impl Scene {
         self.lights.push(light);
     }
 
-    pub fn build_space_partition(&self) -> Option<SpacePartition> {
+    pub fn build_space_partition(&self) -> SpacePartition {
         SpacePartition::from_primitives(&self.primitives)
     }
 
     // Top-level tracing funtion. Given `ray` originating from the viewer at
     // `src`, return the color of the point that it intersects in the scene.
     //
+    // `space_partition` is an acceleration structure.
+    //
     // `near` is the near-clipping distance; intersections closer to `src` will
     // be ignored, meaning those parts of the scene will be invisible.
-    pub fn trace(&self, src: &Point, ray: &Vector, near: f32) -> Color {
-        self.sub_trace(src, ray, near, None, 1.0, 0)
+    pub fn trace(&self,
+            space_partition: &SpacePartition,
+            src: &Point,
+            ray: &Vector,
+            near: f32) -> Color {
+        self.sub_trace(space_partition, src, ray, near, None, 1.0, 0)
     }
 
     // More detailed tracing function. Given `ray` originating from some point
@@ -75,13 +80,14 @@ impl Scene {
     // `depth` is the recursion depth in terms of reflection/refraction rays.
     // Tracing will stop at a maximum threshold.
     fn sub_trace(&self,
+            space_partition: &SpacePartition,
             src: &Point,
             ray: &Vector,
             near: f32,
             ignore: Option<&dyn Shape>,
             contribution: f32,
             depth: u32) -> Color {
-        let intersection = self.intersect_surface(src, ray, near, ignore);
+        let intersection = space_partition.intersect(src, ray, near, ignore);
 
         if let Some((normal, distance, primitive)) = intersection {
             let shape = primitive.shape.as_ref();
@@ -99,7 +105,7 @@ impl Scene {
                     let light_distance = surface_to_light.magnitude();
                     let light_direction = surface_to_light / light_distance;
         
-                    let light_blocked = match self.intersect_surface(
+                    let light_blocked = match space_partition.intersect(
                             &surface_position,
                             &light_direction,
                             0.0,
@@ -124,6 +130,7 @@ impl Scene {
                     if reflection_contribution > MIN_CONTRIBUTION {
                         let reflected_ray = ray.reflected(&normal);
                         let reflected_color = self.sub_trace(
+                            space_partition,
                             &surface_position,
                             &reflected_ray,
                             0.0,
@@ -173,6 +180,7 @@ impl Scene {
                     // acne", but the ideal solution is to pass Some(primitive)
                     // and somehow only ignore the near-side intersection.
                     let refracted_color = self.sub_trace(
+                        space_partition,
                         &surface_position,
                         &refracted_ray,
                         0.0001,
@@ -189,49 +197,5 @@ impl Scene {
         }
     
         self.background.clone()
-    }
-
-    // Given `ray` originating from `src`, find the primitive in the scene
-    // that the ray intersects. If an intersection is found, the return a
-    // tuple of: the surface normal at the intersection point, the distance to
-    // the intersection point, and the primitive that was intersected.
-    //
-    // `near` is a near-clipping distance.
-    //
-    // `ignore` is a primitive to ignore when calculating intersections.
-    fn intersect_surface(&self,
-        src: &Point,
-        ray: &Vector,
-        near: f32,
-        ignore: Option<&dyn Shape>) ->
-                    Option<(Vector, f32, &Primitive)> {
-        let mut best_result: Option<(Vector, f32, &Primitive)> = None;
-
-        // TO DO: This is a linear search through the primitives. It should be
-        // improved with an acceleration structure like a K-D tree.
-        for primitive in &self.primitives {
-            if let Some(ignored_primitive) = ignore {
-                if ignored_primitive as *const _ ==
-                        primitive.shape.deref() as *const _ {
-                    continue;
-                }
-            }
-
-            if let Some(intersection) = primitive.shape.intersect(src, ray, near) {
-                let better_result_found = match &best_result {
-                    Some((_, prior_nearest, _)) =>
-                        intersection.dist < *prior_nearest,
-                    None =>
-                        true
-                };
-
-                if better_result_found {
-                    best_result = Some((intersection.normal,
-                        intersection.dist,
-                        primitive));
-                }
-            }
-        }
-        best_result
     }
 }

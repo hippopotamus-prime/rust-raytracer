@@ -38,7 +38,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut target = render::RenderTarget::new(
         view.width as usize, view.height as usize);
 
-    let partition = scene.build_space_partition();
     render::render(&view, &scene, &mut target);
 
     ppm::write(&target, "trace.ppm")?;
