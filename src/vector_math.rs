@@ -14,7 +14,7 @@ pub struct Vector {
     pub dz: f32
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Axis {
     X,
     Y,

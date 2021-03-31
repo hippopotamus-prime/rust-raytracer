@@ -45,6 +45,8 @@ fn find_splitting_plane(primitives: &[BoxedPrimitive],
         return None;
     }
 
+    println!("Partitioning {} primitives on {:?}", primitives.len(), axis);
+
     let mut min_cost = no_split_cost;
     let mut best_plane = 0.0;
     let mut best_over_box: Option<BoundingBox> = None;
@@ -125,20 +127,11 @@ fn appraise_split(
         }
     }
 
-    // Special cost calculation - the probability of a ray intersecting one of
-    // a pair of partition nodes is roughly proportional to the pair's total
-    // visible surface area, i.e. excluding the two faces that are touching
-    // each other.
     let cost = match under_box.as_ref() {
         Some(under_box) => match over_box.as_ref() {
             Some(over_box) => {
-                let visible_surface_area =
-                    over_box.surface_area() +
-                    under_box.surface_area() -
-                    over_box.face_area(axis) -
-                    under_box.face_area(axis);
-
-                visible_surface_area * primitives.len() as f32
+                appraise(under_count, &under_box) +
+                appraise(over_count, &over_box)
             },
             None => appraise(under_count, &under_box)
         },
