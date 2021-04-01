@@ -13,62 +13,83 @@ pub struct Cone {
 
 impl Shape for Cone {
     fn bounding_box(&self) -> BoundingBox {
-        // The box surrounds the central line of the cone, extended out by
-        // the x/y/z components of the base and apex.  To get a tight bound,
-        // we'll project each axis onto the plane of the base/apex disc,
-        // scale by the base/apex radius, then take the axial component of the
-        // result.
-        //
-        // For example for x and the base, that works out to:
-        // n = apex - base, normalized
-        // [base_radius * ( {1, 0, 0} - n * ({1, 0, 0} dot n) )].x
-        // = [base_radius * ( {1, 0, 0} - n * n.dx )].x
-        // = [base_radius * (1 - n.dx * n.dx)]
-        //
-        // (For the apex, n is reversed, but the math makes it not matter.)
+        // Ideally the box surrounds the central line of the cone and is
+        // extended out by the x/y/z components of the base and apex to form
+        // a tight bound. This can be calculated using projections:
+        // - Project a unit vector from each axis onto the plane of the base,
+        //   e.g. if N is the normalized center line from base to apex, then
+        //   for the x-axis:
+        //      Px = {1, 0, 0} - N * ({1, 0, 0} dot N)
+        //         = {1, 0, 0} - N * N.dx
+        // - Normalize the projection and scale to the length of the base or
+        //   apex.
+        // - Take the axial component of each scaled projection.
+        // - For the special case where an axis projects to a point on the
+        //   base, the box is flush against the base (no extension).
 
+        let unit_x = Vector {dx: 1.0, dy: 0.0, dz: 0.0};
+        let unit_y = Vector {dx: 0.0, dy: 1.0, dz: 0.0};
+        let unit_z = Vector {dx: 0.0, dy: 0.0, dz: 1.0};
         let n = (&self.apex - &self.base).normalized();
-        let base_x_extra = self.base_radius * (1.0 - n.dx * n.dx);
-        let base_y_extra = self.base_radius * (1.0 - n.dy * n.dy);
-        let base_z_extra = self.base_radius * (1.0 - n.dz * n.dz);
-        let apex_x_extra = self.apex_radius * (1.0 - n.dx * n.dx);
-        let apex_y_extra = self.apex_radius * (1.0 - n.dy * n.dy);
-        let apex_z_extra = self.apex_radius * (1.0 - n.dz * n.dz);
 
-        let (corner_x, extent_x) = if self.base.x < self.apex.x {
-            (self.base.x - base_x_extra,
-                self.apex.x - self.base.x + base_x_extra + apex_x_extra)
+        let px = unit_x - (&n * n.dx);
+        let mx = px.magnitude();
+        let scale_x = if mx > 0.0 {
+            px.dx / mx 
         } else {
-            (self.apex.x - apex_x_extra,
-                self.base.x - self.apex.x + base_x_extra + apex_x_extra)
+            0.0
         };
 
-        let (corner_y, extent_y) = if self.base.y < self.apex.y {
-            (self.base.y - base_y_extra,
-                self.apex.y - self.base.y + base_y_extra + apex_y_extra)
+        let py = unit_y - (&n * n.dy);
+        let my = py.magnitude();
+        let scale_y = if my > 0.0 {
+            py.dy / my
         } else {
-            (self.apex.y - apex_y_extra,
-                self.base.y - self.apex.y + base_y_extra + apex_y_extra)
+            0.0
         };
 
-        let (corner_z, extent_z) = if self.base.z < self.apex.z {
-            (self.base.z - base_z_extra,
-                self.apex.z - self.base.z + base_z_extra + apex_z_extra)
+        let pz = unit_z - (&n * n.dz);
+        let mz = pz.magnitude();
+        let scale_z = if mz > 0.0 {
+            pz.dz / mz
         } else {
-            (self.apex.z - apex_z_extra,
-                self.base.z - self.apex.z + base_z_extra + apex_z_extra)
+            0.0
         };
+
+        let base_x_extra = self.base_radius * scale_x;
+        let apex_x_extra = self.apex_radius * scale_x;
+
+        let base_y_extra = self.base_radius * scale_y;
+        let apex_y_extra = self.apex_radius * scale_y;
+
+        let base_z_extra = self.base_radius * scale_z;
+        let apex_z_extra = self.apex_radius * scale_z;
+
+        let min_corner_x = (self.base.x - base_x_extra).min(
+            self.apex.x - apex_x_extra);
+        let max_corner_x = (self.base.x + base_x_extra).max(
+            self.apex.x + apex_x_extra);
+
+        let min_corner_y = (self.base.y - base_y_extra).min(
+            self.apex.y - apex_y_extra);
+        let max_corner_y = (self.base.y + base_y_extra).max(
+            self.apex.y + apex_y_extra);
+
+        let min_corner_z = (self.base.z - base_z_extra).min(
+            self.apex.z - apex_z_extra);
+        let max_corner_z = (self.base.z + base_z_extra).max(
+            self.apex.z + apex_z_extra);
 
         BoundingBox {
             corner: Point {
-                x: corner_x,
-                y: corner_y,
-                z: corner_z
+                x: min_corner_x,
+                y: min_corner_y,
+                z: min_corner_z
             },
             extent: Vector {
-                dx: extent_x,
-                dy: extent_y,
-                dz: extent_z
+                dx: max_corner_x - min_corner_x,
+                dy: max_corner_y - min_corner_y,
+                dz: max_corner_z - min_corner_z
             }
         }
     }
