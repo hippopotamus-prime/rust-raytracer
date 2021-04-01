@@ -82,8 +82,8 @@ impl BoundingBox {
     }
 
     pub fn intersect(&self, src: &Point, ray: &Vector, near_cull: f32) -> bool {
-
-        // TO DO - speed this up using the stuff from the Pluecker paper.
+        // TO DO: does rust support branchless min/max? This could be made
+        // faster by eliminating the if statements.
 
         // Basic idea - consider the box as the intersection of three "slabs"
         // in space.  The ray intersects each slab twice, at a near plane and a
@@ -165,6 +165,9 @@ impl BoundingBox {
         // So, not only does the first far plane intersection have to be
         // farther away than the last near plane intersection, but it also has
         // to be in front of the ray starting point...
-        return smallest_far > largest_near && smallest_far >= near_cull;
+
+        // Note the >= comparison - this has to cover the case of 0-width boxes
+        // around flat polygons.
+        return smallest_far >= largest_near && smallest_far >= near_cull;
     }
 }
