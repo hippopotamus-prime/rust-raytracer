@@ -193,9 +193,6 @@ fn appraise(primitive_count: usize, bounding_box: &BoundingBox) -> f32 {
 }
 
 impl<'a> SpacePartition<'a> {
-    // TO DO: Rendering the scene should involve building a partition and
-    // then tracing rays through it, instead of linearly walking through the
-    // scene's primitives
 
     pub fn from_primitives(
             primitives: &'a[Primitive]) -> SpacePartition<'a> {
@@ -279,7 +276,7 @@ impl<'a> SpacePartition<'a> {
         if !self.bounding_box.intersect(src, ray, near) {
             // No intersection possible if the ray missed the bounding box.
             return None;
-        } 
+        }
         
         match &self.child {
             ChildNode::Leaf(primitives) => {
