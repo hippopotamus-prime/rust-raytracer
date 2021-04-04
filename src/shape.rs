@@ -108,7 +108,7 @@ impl BoundingBox {
                 smallest_far = to_max_plane;
             } else {
                 largest_near = to_max_plane;
-                smallest_far = to_max_plane;
+                smallest_far = to_min_plane;
             }
         } else if src.x < self.corner.x ||
                         src.x > self.corner.x + self.extent.dx {
