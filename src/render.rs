@@ -61,11 +61,11 @@ impl RenderTarget {
     }
 
     pub fn set(&mut self, x: usize, y: usize, color: Color) {
-        self.values[y * self.height + x] = color;
+        self.values[y * self.width + x] = color;
     }
 
     pub fn get(&self, x: usize, y: usize) -> &Color {
-        &self.values[y * self.height + x]
+        &self.values[y * self.width + x]
     }
 }
 
