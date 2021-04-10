@@ -1,20 +1,21 @@
 # rust-raytracer
-Ray tracer in Rust, adapted from [an old C++ project](https://github.com/hippopotamus-prime/raytracer)
+Port of my old [old C++ ray tracer](https://github.com/hippopotamus-prime/raytracer)
+to Rust, done mostly as an exercise to learn the language.
 
-## Planned Features
-* [x] Various geometry primitives
-  * [x] Spheres
-  * [x] Cones
-  * [x] Cylinders
-  * [x] 2D Polygons
-* [x] Various shading models
-  * [x] Phong
-  * [x] Blinn-Phong
-* [x] Reflection & refraction
-* [x] Point light sources with shadowing
-* [ ] Accelerated rendering with K-D trees
-* [x] Input in [NFF format](https://github.com/erich666/StandardProceduralDatabases/blob/master/NFF.TXT)
-* [x] Output in [PPM format](http://netpbm.sourceforge.net/doc/ppm.html)
+## Features
+* Various geometry primitives
+  * Spheres
+  * Cones
+  * Cylinders
+  * 2D Polygons
+* Various shading models
+  * Phong
+  * Blinn-Phong
+* Reflection & refraction
+* Point light sources with shadowing
+* Accelerated rendering with bounding volume hierarchies (K-D trees)
+* Input in [NFF format](https://github.com/erich666/StandardProceduralDatabases/blob/master/NFF.TXT)
+* Output in [PPM format](http://netpbm.sourceforge.net/doc/ppm.html)
 
 ## Usage
 Input is from stdin. Output is to a file named *trace.ppm* in the current directory.
