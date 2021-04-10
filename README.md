@@ -24,3 +24,6 @@ cargo run < nff/teapot.nff
 ```
 
 The ray tracer should be compatible with all NFF files in the [Standard Procedural Databases](https://github.com/erich666/StandardProceduralDatabases).
+
+## Example Output
+![Obligatory Utah Teapot](https://i.imgur.com/8JQMPjq.png)
